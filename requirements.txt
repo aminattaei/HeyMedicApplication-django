@@ -1,0 +1,91 @@
+# ================================
+# Core Framework
+# ================================
+
+Django==6.0
+
+
+# ================================
+# Django REST API
+# ================================
+
+djangorestframework==3.17.0
+django-filter==25.2
+djangorestframework-simplejwt
+djoser
+django-cors-headers
+
+# ================================
+# API Documentation (OpenAPI / Swagger)
+# ================================
+
+drf-spectacular
+uritemplate
+PyYAML
+inflection
+drf_spectacular_sidecar
+
+
+# ================================
+# Database
+# ================================
+
+psycopg2-binary==2.9.11
+
+
+# ================================
+# Configuration / Environment
+# ================================
+
+python-decouple==3.8
+
+
+# ================================
+# Image Processing
+# ================================
+
+pillow==12.1.1
+
+
+# ================================
+# Utilities
+# ================================
+
+packaging==26.0
+importlib_resources==6.5.2
+typing_extensions==4.15.0
+
+
+# ================================
+# Email third party modules
+# ================================
+django-mail-templated
+
+
+# ================================
+# Refactoruing and tests
+# ================================
+flake8
+black
+pytest
+pytest-django
+
+# ================================
+# Adding accident data
+# ================================
+Fakers
+
+# ================================
+# Background proccess & cache
+# ================================
+celery
+django-celery-results
+redis
+django-redis
+
+
+# ================================
+# Deployment serivices
+# ================================
+
+gunicorn
