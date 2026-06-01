@@ -13,7 +13,7 @@ services:
     env_file:
       - .env
     healthcheck:
-      test: ["CMD", "pg_isready", "-h", "localhost", "-p", "5432"]
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,7 +23,7 @@ services:
     container_name: HeyMedic-backend
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - ./core:/app
+      - ./core:/usr/src/app
     ports:
       - "8000:8000"
     env_file:
