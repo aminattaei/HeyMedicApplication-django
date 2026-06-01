@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
-from decouple import config
+from decouple import config # type: ignore
 import os
 from datetime import timedelta
 
@@ -47,8 +47,10 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "rest_framework_simplejwt",
+    "phonenumber_field",
     'drf_spectacular',
     "accounts",
+    "website",
 ]
 
 MIDDLEWARE = [
@@ -166,3 +168,10 @@ REST_FRAMEWORK = {
     
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
+
+# Accounting configs
+AUTH_PROFILE_MODULE = 'accounts.User'
+AUTH_USER_MODEL = 'accounts.User'
+
+# Set default configs for django-phonenumber-field
+PHONENUMBER_DEFAULT_REGION = 'IR'

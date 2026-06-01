@@ -69,11 +69,8 @@ flake8
 black
 pytest
 pytest-django
+Faker==30.0.0
 
-# ================================
-# Adding accident data
-# ================================
-Fakers
 
 # ================================
 # Background proccess & cache
@@ -89,3 +86,10 @@ django-redis
 # ================================
 
 gunicorn
+
+
+# ================================
+# Handle phone number field
+# ================================
+
+django-phonenumber-field[phonenumbers]

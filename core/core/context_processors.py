@@ -1,0 +1,2 @@
+def categories(request):
+    return {}
