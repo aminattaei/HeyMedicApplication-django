@@ -18,7 +18,8 @@ class CustomUserAdmin(UserAdmin):
     form = CustomUserChangeForm
     add_form = CustomUserCreationForm
     
-    list_display = ('phone_number', 'email', 'role', 'is_verified', 'is_staff', 'created_at')
+    
+    list_display = ('phone_number', 'email', 'role', 'is_verified', 'is_staff', 'get_created_at')
     list_filter = ('role', 'is_verified', 'is_staff', 'is_active')
     search_fields = ('phone_number', 'email')
     ordering = ('-created_at',)
@@ -27,7 +28,8 @@ class CustomUserAdmin(UserAdmin):
         (None, {'fields': ('phone_number', 'email', 'password')}),
         ('Role & Verification', {'fields': ('role', 'is_verified')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
-        ('Important dates', {'fields': ('last_login', 'created_at')}),
+        
+        ('Important dates', {'fields': ('last_login',)}),
     )
     
     add_fieldsets = (
@@ -36,5 +38,10 @@ class CustomUserAdmin(UserAdmin):
             'fields': ('phone_number', 'email', 'role', 'password1', 'password2'),
         }),
     )
+    
+    def get_created_at(self, obj):
+        return obj.created_at
+    get_created_at.short_description = 'Created At'
+    get_created_at.admin_order_field = 'created_at'
 
 admin.site.register(User, CustomUserAdmin)
