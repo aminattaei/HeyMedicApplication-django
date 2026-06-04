@@ -1,37 +1,40 @@
-from .models import User
+# accounts/admin.py
 from django.contrib import admin
-from .forms import UserCreationForm, UserChangeForm
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.forms import UserChangeForm, UserCreationForm
+from .models import User
 
-# Register your models here.
+class CustomUserChangeForm(UserChangeForm):
+    class Meta(UserChangeForm.Meta):
+        model = User
+        fields = '__all__'
 
+class CustomUserCreationForm(UserCreationForm):
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = ('phone_number', 'email', 'role')
 
-class UserAdmin(BaseUserAdmin):
-    add_form = UserCreationForm
-    form = UserChangeForm
-    model = User
-    list_display = (
-        "email", "phone_number", "first_name", "last_name", "is_staff")
-    list_filter = (
-        "is_staff", "is_superuser", "is_active", "groups")
+class CustomUserAdmin(UserAdmin):
+    form = CustomUserChangeForm
+    add_form = CustomUserCreationForm
+    
+    list_display = ('phone_number', 'email', 'role', 'is_verified', 'is_staff', 'created_at')
+    list_filter = ('role', 'is_verified', 'is_staff', 'is_active')
+    search_fields = ('phone_number', 'email')
+    ordering = ('-created_at',)
+    
     fieldsets = (
-        (None, {"fields": ("email", "password")}),
-        ("Personal info", {"fields": (
-            "first_name", "last_name", "phone_number")}), 
-        ("Permissions", {"fields": (
-            "is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
-        ("Important Dates", {"fields": (
-            "last_login", "date_joined")})
+        (None, {'fields': ('phone_number', 'email', 'password')}),
+        ('Role & Verification', {'fields': ('role', 'is_verified')}),
+        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Important dates', {'fields': ('last_login', 'created_at')}),
     )
+    
     add_fieldsets = (
         (None, {
-            "classes": ("wide",),
-            "fields": (
-                "email", "phone_number", "password1", "password2" 
-            )}),
+            'classes': ('wide',),
+            'fields': ('phone_number', 'email', 'role', 'password1', 'password2'),
+        }),
     )
-    search_fields = ("email", "phone_number") 
-    ordering = ("email", "phone_number") 
 
-
-admin.site.register(User, UserAdmin)
+admin.site.register(User, CustomUserAdmin)
