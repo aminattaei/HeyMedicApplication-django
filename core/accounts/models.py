@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
-from phonenumber_field.modelfields import PhoneNumberField
+from phonenumber_field.modelfields import PhoneNumberField # type: ignore
 
 class UserManager(BaseUserManager):
     def create_user(self, phone_number, password=None, **extra_fields):
