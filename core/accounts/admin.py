@@ -18,7 +18,6 @@ class CustomUserAdmin(UserAdmin):
     form = CustomUserChangeForm
     add_form = CustomUserCreationForm
     
-    
     list_display = ('phone_number', 'email', 'role', 'is_verified', 'is_staff', 'get_created_at')
     list_filter = ('role', 'is_verified', 'is_staff', 'is_active')
     search_fields = ('phone_number', 'email')
@@ -28,7 +27,6 @@ class CustomUserAdmin(UserAdmin):
         (None, {'fields': ('phone_number', 'email', 'password')}),
         ('Role & Verification', {'fields': ('role', 'is_verified')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
-        
         ('Important dates', {'fields': ('last_login',)}),
     )
     

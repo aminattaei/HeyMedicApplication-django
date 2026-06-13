@@ -14,9 +14,9 @@ services:
       - .env
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAME}"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   backend:
     build: .
@@ -29,8 +29,9 @@ services:
     env_file:
       - .env
     depends_on:
-      - db
-    restart: always
+      db:
+        condition: service_healthy
+    restart: on-failure
 
 volumes:
   postgres_data:
