@@ -8,6 +8,9 @@
 .cache
 .project
 .idea
+.vscode
+.venv
+.kilo
 .pydevproject
 .idea/workspace.xml
 .DS_Store

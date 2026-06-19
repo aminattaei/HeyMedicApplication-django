@@ -2,7 +2,7 @@
 # Core Framework
 # ================================
 
-Django==6.0
+Django==6.0.6
 
 
 # ================================
@@ -93,3 +93,9 @@ gunicorn
 # ================================
 
 django-phonenumber-field[phonenumbers]
+
+
+# ================================
+# Create auto slugfiled and translate it
+# ================================
+googletrans==4.0.0-rc1
