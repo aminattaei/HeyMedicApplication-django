@@ -1,6 +1,10 @@
-from rest_framework import serializers #type: ignore
+from rest_framework import serializers
 
-from accounts.models import *
+from accounts.models import User
+from accounts.models import PatientProfile
+from accounts.models import Specialty
+
+
 
 class UserSerializer(serializers.ModelSerializer):
     role = serializers.ReadOnlyField()

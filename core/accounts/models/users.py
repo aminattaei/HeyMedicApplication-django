@@ -53,8 +53,9 @@ class User(AbstractUser):
     USERNAME_FIELD = 'phone_number'
     REQUIRED_FIELDS = ['email']
 
-    objects = UserManager()
+    objects = UserManager() #type: ignore
 
-    def __str__(self):
-        return str(self.phone_number)
+    def __str__(self): # type: ignore
+        return str(self.phone_number) or self.email
+        
     
