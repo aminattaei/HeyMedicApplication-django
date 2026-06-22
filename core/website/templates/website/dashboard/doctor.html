@@ -1,0 +1,166 @@
+{% extends "website/base.html" %}
+
+{% block title %}داشبورد پزشک - HeyMedic{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-10">
+
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">داشبورد پزشک</h1>
+        <p class="text-gray-500">مدیریت نوبت‌ها و ساعت‌های کاری</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <div class="lg:col-span-2 space-y-6">
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">نوبت‌های امروز</h2>
+                {% if today_appointments %}
+                    <div class="space-y-3">
+                        {% for apt in today_appointments %}
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                                        <span class="text-primary-700 font-bold text-sm">{{ apt.patient.full_name|truncatechars:1 }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-gray-800">{{ apt.patient.full_name }}</span>
+                                        <span class="text-sm text-gray-500 block">{{ apt.time_slot.start_time|time:"H:i" }} - {{ apt.time_slot.end_time|time:"H:i" }}</span>
+                                    </div>
+                                </div>
+                                <span class="px-3 py-1 rounded-full text-xs font-medium
+                                    {% if apt.status == 'pending' %}bg-yellow-100 text-yellow-700
+                                    {% elif apt.status == 'confirmed' %}bg-green-100 text-green-700
+                                    {% endif %}">
+                                    {{ apt.get_status_display }}
+                                </span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-gray-400 text-center py-8">نوبتی برای امروز ثبت نشده.</p>
+                {% endif %}
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">همه نوبت‌ها</h2>
+                {% if all_appointments %}
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-gray-100">
+                                    <th class="text-right py-3 px-2 text-gray-500 font-medium">بیمار</th>
+                                    <th class="text-right py-3 px-2 text-gray-500 font-medium">تاریخ</th>
+                                    <th class="text-right py-3 px-2 text-gray-500 font-medium">ساعت</th>
+                                    <th class="text-right py-3 px-2 text-gray-500 font-medium">وضعیت</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for apt in all_appointments %}
+                                    <tr class="border-b border-gray-50">
+                                        <td class="py-3 px-2 font-medium text-gray-800">{{ apt.patient.full_name }}</td>
+                                        <td class="py-3 px-2 text-gray-600">{{ apt.time_slot.date }}</td>
+                                        <td class="py-3 px-2 text-gray-600">{{ apt.time_slot.start_time|time:"H:i" }} - {{ apt.time_slot.end_time|time:"H:i" }}</td>
+                                        <td class="py-3 px-2">
+                                            <span class="px-2 py-0.5 rounded-full text-xs font-medium
+                                                {% if apt.status == 'pending' %}bg-yellow-100 text-yellow-700
+                                                {% elif apt.status == 'confirmed' %}bg-green-100 text-green-700
+                                                {% elif apt.status == 'cancelled' %}bg-red-100 text-red-700
+                                                {% elif apt.status == 'completed' %}bg-blue-100 text-blue-700
+                                                {% endif %}">
+                                                {{ apt.get_status_display }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-gray-400 text-center py-8">هنوز نوبتی ثبت نشده.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">افزودن ساعت کاری</h2>
+                <form id="add-slot-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">تاریخ</label>
+                        <input type="date" id="slot-date" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">از ساعت</label>
+                            <input type="time" id="slot-start" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">تا ساعت</label>
+                            <input type="time" id="slot-end" required class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition">
+                        افزودن ساعت
+                    </button>
+                </form>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">ساعت‌های ثبت شده</h2>
+                {% if time_slots %}
+                    <div class="space-y-2">
+                        {% for slot in time_slots %}
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl text-sm">
+                                <div>
+                                    <span class="font-medium text-gray-800">{{ slot.date }}</span>
+                                    <span class="text-gray-500 block">{{ slot.start_time|time:"H:i" }} - {{ slot.end_time|time:"H:i" }}</span>
+                                </div>
+                                <span class="text-xs px-2 py-0.5 rounded-full {% if slot.is_available %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+                                    {% if slot.is_available %}خالی{% else %}رزرو شده{% endif %}
+                                </span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-gray-400 text-center py-4 text-sm">ساعتی ثبت نشده.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('add-slot-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const data = {
+        doctor: {{ doctor_profile.pk }},
+        date: document.getElementById('slot-date').value,
+        start_time: document.getElementById('slot-start').value,
+        end_time: document.getElementById('slot-end').value,
+    };
+
+    try {
+        const res = await fetch('/api/v1/slots/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify(data)
+        });
+        if (res.ok) {
+            location.reload();
+        } else {
+            const err = await res.json();
+            alert(JSON.stringify(err));
+        }
+    } catch(e) {
+        alert('خطا در ارتباط با سرور');
+    }
+});
+</script>
+{% endblock %}

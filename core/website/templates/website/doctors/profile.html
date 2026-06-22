@@ -1,0 +1,166 @@
+{% extends "website/base.html" %}
+
+{% block title %}{{ doctor.full_name }} - HeyMedic{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-10">
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex items-start gap-6 mb-6">
+                    <div class="w-20 h-20 bg-primary-100 rounded-2xl flex items-center justify-center flex-shrink-0">
+                        <span class="text-primary-700 font-bold text-3xl">{{ doctor.full_name|truncatechars:1 }}</span>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800 mb-1">{{ doctor.full_name }}</h1>
+                        <span class="text-sm text-primary-600 bg-primary-50 px-3 py-1 rounded-full">{{ doctor.specialty.title }}</span>
+                        <p class="text-sm text-gray-500 mt-2">شماره نظام پزشکی: {{ doctor.medical_license_no }}</p>
+                    </div>
+                </div>
+                <div class="border-t border-gray-100 pt-4">
+                    <h3 class="font-bold text-gray-800 mb-2">درباره پزشک</h3>
+                    <p class="text-gray-600 leading-8">{{ doctor.bio|default:"توضیحی ثبت نشده است." }}</p>
+                </div>
+                <div class="border-t border-gray-100 pt-4 mt-4">
+                    <h3 class="font-bold text-gray-800 mb-2">آدرس کلینیک</h3>
+                    <p class="text-gray-600 leading-8">{{ doctor.clinic_address }}</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">نظرات بیماران</h2>
+                {% if reviews %}
+                    <div class="space-y-4">
+                        {% for review in reviews %}
+                            <div class="border border-gray-100 rounded-xl p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-medium text-gray-800">{{ review.patient.full_name }}</span>
+                                    <div class="flex items-center gap-1">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= review.rating %}
+                                                <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                            {% else %}
+                                                <svg class="w-4 h-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <p class="text-gray-600 text-sm">{{ review.comment }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-gray-400 text-center py-8">هنوز نظری ثبت نشده است.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 sticky top-24">
+                <div class="text-center mb-6">
+                    <span class="text-3xl font-bold text-primary-600">{{ doctor.price|floatformat:0 }}</span>
+                    <span class="text-gray-500 text-sm block">تومان هزینه ویزیت</span>
+                </div>
+                <div class="flex items-center justify-center gap-2 mb-6">
+                    <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    <span class="font-bold text-gray-800">{{ doctor.rating_avg }}</span>
+                    <span class="text-gray-400 text-sm">از ۵</span>
+                </div>
+
+                <h3 class="font-bold text-gray-800 mb-3">انتخاب تاریخ نوبت</h3>
+                <input type="date" id="slot-date" min="" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 mb-4 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+
+                <div id="slots-container" class="space-y-2 mb-4">
+                    <p class="text-gray-400 text-sm text-center py-4">تاریخ را انتخاب کنید</p>
+                </div>
+
+                <div id="selected-slot-info" class="hidden bg-primary-50 p-4 rounded-xl mb-4">
+                    <p class="text-sm text-primary-700 font-medium" id="selected-slot-text"></p>
+                </div>
+
+                <button id="book-btn" disabled class="w-full bg-primary-600 text-white py-3 rounded-xl font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    رزرو نوبت
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const doctorId = {{ doctor.pk }};
+    const dateInput = document.getElementById('slot-date');
+    const slotsContainer = document.getElementById('slots-container');
+    const bookBtn = document.getElementById('book-btn');
+    const selectedSlotInfo = document.getElementById('selected-slot-info');
+    const selectedSlotText = document.getElementById('selected-slot-text');
+    let selectedSlotId = null;
+
+    dateInput.min = new Date().toISOString().split('T')[0];
+
+    dateInput.addEventListener('change', async function() {
+        const date = this.value;
+        slotsContainer.innerHTML = '<p class="text-gray-400 text-sm text-center py-4">در حال بارگذاری...</p>';
+        selectedSlotId = null;
+        bookBtn.disabled = true;
+        selectedSlotInfo.classList.add('hidden');
+
+        try {
+            const res = await fetch(`/api/v1/slots/?doctor_id=${doctorId}&date=${date}&available_only=true`);
+            const slots = await res.json();
+
+            if (slots.length === 0) {
+                slotsContainer.innerHTML = '<p class="text-gray-400 text-sm text-center py-4">ساعت خالی وجود ندارد</p>';
+                return;
+            }
+
+            slotsContainer.innerHTML = slots.map(slot => `
+                <button data-id="${slot.id}" data-start="${slot.start_time}" data-end="${slot.end_time}"
+                    class="slot-btn w-full border border-gray-200 rounded-xl px-4 py-3 text-right hover:border-primary-500 hover:bg-primary-50 transition flex justify-between items-center">
+                    <span class="text-gray-700 font-medium">${slot.start_time.substring(0,5)} - ${slot.end_time.substring(0,5)}</span>
+                    <span class="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">خالی</span>
+                </button>
+            `).join('');
+
+            document.querySelectorAll('.slot-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('border-primary-500', 'bg-primary-50'));
+                    this.classList.add('border-primary-500', 'bg-primary-50');
+                    selectedSlotId = this.dataset.id;
+                    selectedSlotText.textContent = `ساعت ${this.dataset.start.substring(0,5)} تا ${this.dataset.end.substring(0,5)}`;
+                    selectedSlotInfo.classList.remove('hidden');
+                    bookBtn.disabled = false;
+                });
+            });
+        } catch(e) {
+            slotsContainer.innerHTML = '<p class="text-red-400 text-sm text-center py-4">خطا در بارگذاری</p>';
+        }
+    });
+
+    bookBtn.addEventListener('click', async function() {
+        if (!selectedSlotId) return;
+        try {
+            const res = await fetch('/api/v1/appointments/book/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: JSON.stringify({ time_slot_id: parseInt(selectedSlotId) })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                alert('نوبت با موفقیت رزرو شد!');
+                window.location.href = "{% url 'website:my_appointments' %}";
+            } else {
+                alert(data.detail || 'خطا در رزرو نوبت');
+            }
+        } catch(e) {
+            alert('خطا در ارتباط با سرور');
+        }
+    });
+</script>
+{% endblock %}
