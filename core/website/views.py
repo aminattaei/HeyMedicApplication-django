@@ -7,6 +7,7 @@ from django.contrib import messages
 
 from accounts.models import User, DoctorProfile, PatientProfile, Specialty
 from appointments.models import TimeSlot, Appointment
+from payments.models import Payment
 from reviews.models import Review
 
 
@@ -65,8 +66,50 @@ class MyAppointmentsView(LoginRequiredMixin, ListView):
         )
 
 
+class PatientDashboardView(LoginRequiredMixin, TemplateView):
+    """Patient dashboard showing stats, upcoming appointments, payments, and reviews."""
+    template_name = "website/dashboard/patient.html"
+    login_url = "/accounts/login/"
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.role != 'patient':
+            return redirect('website:home_page')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        patient = self.request.user.patient_profile
+        status_filter = self.request.GET.get('status')
+
+        all_appts = Appointment.objects.filter(patient=patient)
+        ctx['stats'] = {
+            'total': all_appts.count(),
+            'pending': all_appts.filter(status='pending').count(),
+            'confirmed': all_appts.filter(status='confirmed').count(),
+            'completed': all_appts.filter(status='completed').count(),
+            'cancelled': all_appts.filter(status='cancelled').count(),
+        }
+
+        upcoming = all_appts.filter(status__in=['pending', 'confirmed'])
+        if status_filter in ('pending', 'confirmed'):
+            upcoming = upcoming.filter(status=status_filter)
+        ctx['upcoming_appointments'] = upcoming.select_related(
+            'doctor', 'doctor__specialty', 'time_slot'
+        )[:10]
+
+        ctx['recent_payments'] = Payment.objects.filter(
+            patient=patient
+        ).select_related('appointment', 'appointment__doctor')[:5]
+
+        ctx['recent_reviews'] = Review.objects.filter(
+            patient=patient
+        ).select_related('doctor')[:5]
+
+        return ctx
+
+
 class DoctorDashboardView(LoginRequiredMixin, TemplateView):
-    """Doctor dashboard showing today's appointments and time slots."""
+    """Doctor dashboard with stats, revenue chart, weekly calendar, and appointment management."""
     template_name = "website/dashboard/doctor.html"
     login_url = "/accounts/login/"
 
@@ -78,20 +121,87 @@ class DoctorDashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         from django.utils import timezone
+        from django.db.models import Sum, Count
+        from datetime import timedelta
+
         today = timezone.now().date()
         doctor_profile = self.request.user.doctor_profile
+        status_filter = self.request.GET.get('status')
+        search = self.request.GET.get('search')
+
+        all_appts = Appointment.objects.filter(doctor=doctor_profile)
 
         ctx['doctor_profile'] = doctor_profile
-        ctx['today_appointments'] = Appointment.objects.filter(
-            doctor=doctor_profile,
+
+        ctx['stats'] = {
+            'total_appointments': all_appts.count(),
+            'today_count': all_appts.filter(time_slot__date=today).count(),
+            'total_patients': all_appts.values('patient').distinct().count(),
+            'total_revenue': Payment.objects.filter(
+                appointment__doctor=doctor_profile, status='successful'
+            ).aggregate(total=Sum('amount'))['total'] or 0,
+        }
+
+        ctx['today_appointments'] = all_appts.filter(
             time_slot__date=today
         ).select_related('patient', 'time_slot')
-        ctx['all_appointments'] = Appointment.objects.filter(
-            doctor=doctor_profile
-        ).select_related('patient', 'time_slot')[:20]
+
+        filtered_appts = all_appts.select_related('patient', 'time_slot')
+        if status_filter:
+            filtered_appts = filtered_appts.filter(status=status_filter)
+        if search:
+            filtered_appts = filtered_appts.filter(patient__full_name__icontains=search)
+        ctx['all_appointments'] = filtered_appts[:30]
+
         ctx['time_slots'] = TimeSlot.objects.filter(
             doctor=doctor_profile
         ).order_by('-date', 'start_time')[:20]
+
+        ctx['recent_reviews'] = Review.objects.filter(
+            doctor=doctor_profile
+        ).select_related('patient')[:5]
+
+        # Weekly calendar data
+        start_of_week = today - timedelta(days=today.weekday())
+        weekly_days = []
+        day_labels = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه']
+        for i in range(7):
+            d = start_of_week + timedelta(days=i)
+            weekly_days.append({'label': day_labels[i], 'date': d.strftime('%m/%d'), 'raw': d})
+        ctx['weekly_days'] = weekly_days
+
+        ctx['weekly_slots'] = TimeSlot.objects.filter(
+            doctor=doctor_profile,
+            date__gte=start_of_week,
+            date__lt=start_of_week + timedelta(days=7),
+        ).order_by('date', 'start_time')
+
+        weekly_hours = []
+        for h in range(7, 21):
+            weekly_hours.append(f'{h:02d}:00')
+        ctx['weekly_hours'] = weekly_hours
+
+        # Monthly revenue for chart (last 6 months)
+        monthly_revenue = []
+        for i in range(5, -1, -1):
+            month_date = today - timedelta(days=30 * i)
+            month_start = month_date.replace(day=1)
+            if i > 0:
+                next_month_start = (month_start + timedelta(days=32)).replace(day=1)
+            else:
+                next_month_start = today + timedelta(days=1)
+            total = Payment.objects.filter(
+                appointment__doctor=doctor_profile,
+                status='successful',
+                paid_at__gte=month_start,
+                paid_at__lt=next_month_start,
+            ).aggregate(total=Sum('amount'))['total'] or 0
+            monthly_revenue.append({
+                'month': month_start.strftime('%Y/%m'),
+                'total': total,
+            })
+        ctx['monthly_revenue'] = monthly_revenue
+
         return ctx
 
 

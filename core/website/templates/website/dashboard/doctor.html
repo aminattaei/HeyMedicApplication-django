@@ -7,15 +7,125 @@
 
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-800 mb-2">داشبورد پزشک</h1>
-        <p class="text-gray-500">مدیریت نوبت‌ها و ساعت‌های کاری</p>
+        <p class="text-gray-500">مدیریت نوبت‌ها، ساعت‌های کاری و درآمد</p>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center">
+                    <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </div>
+                <span class="text-2xl font-bold text-gray-800">{{ stats.total_appointments }}</span>
+            </div>
+            <span class="text-sm text-gray-500">کل نوبت‌ها</span>
+        </div>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <span class="text-2xl font-bold text-gray-800">{{ stats.today_count }}</span>
+            </div>
+            <span class="text-sm text-gray-500">نوبت امروز</span>
+        </div>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </div>
+                <span class="text-2xl font-bold text-gray-800">{{ stats.total_patients }}</span>
+            </div>
+            <span class="text-sm text-gray-500">کل بیماران</span>
+        </div>
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center">
+                    <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <span class="text-2xl font-bold text-gray-800">{{ stats.total_revenue|floatformat:0 }}</span>
+            </div>
+            <span class="text-sm text-gray-500">درآمد (تومان)</span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">نمودار درآمد ماهانه</h2>
+            <canvas id="revenueChart" height="120"></canvas>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">نظرات اخیر</h2>
+            {% if recent_reviews %}
+                <div class="space-y-3">
+                    {% for r in recent_reviews %}
+                        <div class="p-3 bg-gray-50 rounded-xl">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-medium text-gray-800 text-sm">{{ r.patient.full_name }}</span>
+                                <div class="flex items-center gap-0.5">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= r.rating %}
+                                            <svg class="w-3.5 h-3.5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <p class="text-gray-600 text-xs leading-5">{{ r.comment|truncatechars:60 }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-gray-400 text-center py-6 text-sm">هنوز نظری دریافت نشده.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">تقویم هفتگی</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm min-w-[700px]">
+                <thead>
+                    <tr>
+                        <th class="py-2 px-3 text-gray-500 font-medium text-center w-[12%]">ساعت</th>
+                        {% for day in weekly_days %}
+                            <th class="py-2 px-3 text-gray-500 font-medium text-center w-[12.5%]">
+                                <div>{{ day.label }}</div>
+                                <div class="text-xs text-gray-400">{{ day.date }}</div>
+                            </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hour in weekly_hours %}
+                        <tr class="border-t border-gray-50">
+                            <td class="py-2 px-3 text-gray-400 text-center text-xs">{{ hour }}</td>
+                            {% for day in weekly_days %}
+                                <td class="py-1 px-1 text-center">
+                                    {% for slot in weekly_slots %}
+                                        {% if slot.date == day.raw and slot.start_time|time:"H:00" == hour %}
+                                            <div class="text-xs rounded-lg px-2 py-1.5 {% if slot.is_available %}bg-green-100 text-green-700 border border-green-200{% else %}bg-primary-100 text-primary-700 border border-primary-200{% endif %}">
+                                                {{ slot.start_time|time:"H:i" }}-{{ slot.end_time|time:"H:i" }}
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
 
         <div class="lg:col-span-2 space-y-6">
 
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <h2 class="text-xl font-bold text-gray-800 mb-4">نوبت‌های امروز</h2>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">نوبت‌های امروز</h2>
+                </div>
                 {% if today_appointments %}
                     <div class="space-y-3">
                         {% for apt in today_appointments %}
@@ -29,12 +139,20 @@
                                         <span class="text-sm text-gray-500 block">{{ apt.time_slot.start_time|time:"H:i" }} - {{ apt.time_slot.end_time|time:"H:i" }}</span>
                                     </div>
                                 </div>
-                                <span class="px-3 py-1 rounded-full text-xs font-medium
-                                    {% if apt.status == 'pending' %}bg-yellow-100 text-yellow-700
-                                    {% elif apt.status == 'confirmed' %}bg-green-100 text-green-700
-                                    {% endif %}">
-                                    {{ apt.get_status_display }}
-                                </span>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-3 py-1 rounded-full text-xs font-medium
+                                        {% if apt.status == 'pending' %}bg-yellow-100 text-yellow-700
+                                        {% elif apt.status == 'confirmed' %}bg-green-100 text-green-700
+                                        {% endif %}">
+                                        {{ apt.get_status_display }}
+                                    </span>
+                                    {% if apt.status == 'pending' %}
+                                        <button onclick="updateAppointment({{ apt.pk }}, 'confirmed')" class="text-xs bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700 transition">تایید</button>
+                                    {% endif %}
+                                    {% if apt.status == 'confirmed' %}
+                                        <button onclick="updateAppointment({{ apt.pk }}, 'completed')" class="text-xs bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition">انجام شد</button>
+                                    {% endif %}
+                                </div>
                             </div>
                         {% endfor %}
                     </div>
@@ -44,7 +162,21 @@
             </div>
 
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <h2 class="text-xl font-bold text-gray-800 mb-4">همه نوبت‌ها</h2>
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
+                    <h2 class="text-xl font-bold text-gray-800">همه نوبت‌ها</h2>
+                    <form method="get" class="flex gap-2 flex-wrap">
+                        <select name="status" class="text-xs border border-gray-300 rounded-lg px-3 py-1.5 bg-white focus:ring-2 focus:ring-primary-500 outline-none">
+                            <option value="">همه وضعیت‌ها</option>
+                            <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>در انتظار</option>
+                            <option value="confirmed" {% if request.GET.status == 'confirmed' %}selected{% endif %}>تایید شده</option>
+                            <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>انجام شده</option>
+                            <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>لغو شده</option>
+                        </select>
+                        <input type="text" name="search" value="{{ request.GET.search }}" placeholder="جستجوی بیمار..."
+                            class="text-xs border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-primary-500 outline-none w-40">
+                        <button type="submit" class="text-xs bg-primary-600 text-white px-3 py-1.5 rounded-lg hover:bg-primary-700 transition">فیلتر</button>
+                    </form>
+                </div>
                 {% if all_appointments %}
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
@@ -54,6 +186,7 @@
                                     <th class="text-right py-3 px-2 text-gray-500 font-medium">تاریخ</th>
                                     <th class="text-right py-3 px-2 text-gray-500 font-medium">ساعت</th>
                                     <th class="text-right py-3 px-2 text-gray-500 font-medium">وضعیت</th>
+                                    <th class="text-right py-3 px-2 text-gray-500 font-medium">عملیات</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -72,13 +205,26 @@
                                                 {{ apt.get_status_display }}
                                             </span>
                                         </td>
+                                        <td class="py-3 px-2">
+                                            <div class="flex gap-1">
+                                                {% if apt.status == 'pending' %}
+                                                    <button onclick="updateAppointment({{ apt.pk }}, 'confirmed')" class="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700">تایید</button>
+                                                    <button onclick="updateAppointment({{ apt.pk }}, 'cancelled')" class="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700">لغو</button>
+                                                {% elif apt.status == 'confirmed' %}
+                                                    <button onclick="updateAppointment({{ apt.pk }}, 'completed')" class="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700">انجام شد</button>
+                                                    <button onclick="updateAppointment({{ apt.pk }}, 'cancelled')" class="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700">لغو</button>
+                                                {% else %}
+                                                    <span class="text-xs text-gray-400">---</span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
                 {% else %}
-                    <p class="text-gray-400 text-center py-8">هنوز نوبتی ثبت نشده.</p>
+                    <p class="text-gray-400 text-center py-8">نوبتی یافت نشد.</p>
                 {% endif %}
             </div>
         </div>
@@ -117,9 +263,16 @@
                                     <span class="font-medium text-gray-800">{{ slot.date }}</span>
                                     <span class="text-gray-500 block">{{ slot.start_time|time:"H:i" }} - {{ slot.end_time|time:"H:i" }}</span>
                                 </div>
-                                <span class="text-xs px-2 py-0.5 rounded-full {% if slot.is_available %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
-                                    {% if slot.is_available %}خالی{% else %}رزرو شده{% endif %}
-                                </span>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs px-2 py-0.5 rounded-full {% if slot.is_available %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+                                        {% if slot.is_available %}خالی{% else %}رزرو شده{% endif %}
+                                    </span>
+                                    {% if slot.is_available %}
+                                        <button onclick="deleteSlot({{ slot.pk }})" class="text-red-400 hover:text-red-600 p-1 rounded transition" title="حذف">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    {% endif %}
+                                </div>
                             </div>
                         {% endfor %}
                     </div>
@@ -133,34 +286,78 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-document.getElementById('add-slot-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const data = {
-        doctor: {{ doctor_profile.pk }},
-        date: document.getElementById('slot-date').value,
-        start_time: document.getElementById('slot-start').value,
-        end_time: document.getElementById('slot-end').value,
-    };
+    const revenueLabels = [{% for item in monthly_revenue %}'{{ item.month }}'{% if not forloop.last %},{% endif %}{% endfor %}];
+    const revenueData = [{% for item in monthly_revenue %}{{ item.total }}{% if not forloop.last %},{% endif %}{% endfor %}];
 
-    try {
-        const res = await fetch('/api/v1/slots/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}',
-            },
-            body: JSON.stringify(data)
-        });
-        if (res.ok) {
-            location.reload();
-        } else {
-            const err = await res.json();
-            alert(JSON.stringify(err));
+    new Chart(document.getElementById('revenueChart'), {
+        type: 'line',
+        data: {
+            labels: revenueLabels,
+            datasets: [{
+                label: 'درآمد (تومان)',
+                data: revenueData,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#3b82f6',
+                pointRadius: 5,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString('fa-IR') } }
+            }
         }
-    } catch(e) {
-        alert('خطا در ارتباط با سرور');
+    });
+
+    document.getElementById('add-slot-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const data = {
+            doctor: {{ doctor_profile.pk }},
+            date: document.getElementById('slot-date').value,
+            start_time: document.getElementById('slot-start').value,
+            end_time: document.getElementById('slot-end').value,
+        };
+        try {
+            const res = await fetch('/api/v1/slots/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) location.reload();
+            else { const err = await res.json(); alert(JSON.stringify(err)); }
+        } catch(e) { alert('خطا در ارتباط با سرور'); }
+    });
+
+    async function updateAppointment(id, newStatus) {
+        const actions = { confirmed: 'تایید', completed: 'انجام', cancelled: 'لغو' };
+        if (!confirm(`آیا از ${actions[newStatus]} نوبت اطمینان دارید؟`)) return;
+        try {
+            const res = await fetch(`/api/v1/appointments/${id}/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                body: JSON.stringify({ status: newStatus })
+            });
+            if (res.ok) location.reload();
+            else { const data = await res.json(); alert(JSON.stringify(data)); }
+        } catch(e) { alert('خطا در ارتباط با سرور'); }
     }
-});
+
+    async function deleteSlot(id) {
+        if (!confirm('آیا از حذف این ساعت اطمینان دارید؟')) return;
+        try {
+            const res = await fetch(`/api/v1/slots/${id}/`, {
+                method: 'DELETE',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+            });
+            if (res.ok) location.reload();
+            else alert('خطا در حذف ساعت');
+        } catch(e) { alert('خطا در ارتباط با سرور'); }
+    }
 </script>
 {% endblock %}

@@ -9,6 +9,7 @@ urlpatterns = [
     path("doctors/<int:pk>/", views.DoctorProfileView.as_view(), name="doctor_profile"),
     path("my-appointments/", views.MyAppointmentsView.as_view(), name="my_appointments"),
     path("dashboard/doctor/", views.DoctorDashboardView.as_view(), name="doctor_dashboard"),
+    path("dashboard/patient/", views.PatientDashboardView.as_view(), name="patient_dashboard"),
     path("profile/", views.UserProfileView.as_view(), name="user_profile"),
     path("profile/change-password/", views.ChangePasswordView.as_view(), name="change_password"),
     path("accounts/login/", views.LoginView.as_view(), name="login"),
