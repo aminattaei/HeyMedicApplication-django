@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect
 from django.views import View
 from django.views.generic import TemplateView, ListView, DetailView
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib import messages
 
-from accounts.models import User, DoctorProfile, Specialty
+from accounts.models import User, DoctorProfile, PatientProfile, Specialty
 from appointments.models import TimeSlot, Appointment
 from reviews.models import Review
 
@@ -174,3 +175,112 @@ class LogoutView(View):
     def get(self, request):
         logout(request)
         return redirect('website:home_page')
+
+
+class UserProfileView(LoginRequiredMixin, View):
+    """
+    User profile page with view and edit functionality.
+    Displays user info and profile-specific fields based on role.
+    """
+
+    template_name = "website/profile.html"
+    login_url = "/accounts/login/"
+
+    def get(self, request):
+        user = request.user
+        context = {'user': user}
+
+        if user.role == 'patient':
+            try:
+                context['patient_profile'] = user.patient_profile
+                context['profile'] = user.patient_profile
+            except PatientProfile.DoesNotExist:
+                context['patient_profile'] = None
+                context['profile'] = None
+
+        elif user.role == 'doctor':
+            try:
+                context['doctor_profile'] = user.doctor_profile
+                context['profile'] = user.doctor_profile
+                context['specialties'] = Specialty.objects.all()
+            except DoctorProfile.DoesNotExist:
+                context['doctor_profile'] = None
+                context['profile'] = None
+
+        return render(request, self.template_name, context)
+
+    def post(self, request):
+        user = request.user
+        context = {'user': user}
+
+        if request.POST.get('form_type') == 'change_password':
+            return redirect('website:change_password')
+
+        user.email = request.POST.get('email', user.email)
+        user.save()
+
+        if user.role == 'patient':
+            profile, _ = PatientProfile.objects.get_or_create(user=user)
+            profile.full_name = request.POST.get('full_name', profile.full_name)
+            profile.national_id = request.POST.get('national_id', profile.national_id)
+            birth_date = request.POST.get('birth_date')
+            if birth_date:
+                profile.birth_date = birth_date
+            profile.gender = request.POST.get('gender', profile.gender)
+            profile.save()
+            context['patient_profile'] = profile
+            context['profile'] = profile
+
+        elif user.role == 'doctor':
+            profile, _ = DoctorProfile.objects.get_or_create(user=user)
+            profile.full_name = request.POST.get('full_name', profile.full_name)
+            profile.medical_license_no = request.POST.get('medical_license_no', profile.medical_license_no)
+            profile.bio = request.POST.get('bio', profile.bio)
+            profile.clinic_address = request.POST.get('clinic_address', profile.clinic_address)
+            price = request.POST.get('price')
+            if price:
+                profile.price = int(price)
+            specialty_id = request.POST.get('specialty')
+            if specialty_id:
+                profile.specialty_id = specialty_id
+            profile.save()
+            context['doctor_profile'] = profile
+            context['profile'] = profile
+            context['specialties'] = Specialty.objects.all()
+
+        messages.success(request, "پروفایل با موفقیت به‌روزرسانی شد.")
+        return render(request, self.template_name, context)
+
+
+class ChangePasswordView(LoginRequiredMixin, View):
+    """Change user password with old password verification."""
+
+    template_name = "website/auth/change_password.html"
+    login_url = "/accounts/login/"
+
+    def get(self, request):
+        return render(request, self.template_name)
+
+    def post(self, request):
+        user = request.user
+        old_password = request.POST.get('old_password', '')
+        new_password = request.POST.get('new_password1', '')
+        new_password_confirm = request.POST.get('new_password2', '')
+
+        if not user.check_password(old_password):
+            messages.error(request, "رمز عبور فعلی اشتباه است.")
+            return render(request, self.template_name)
+
+        if new_password != new_password_confirm:
+            messages.error(request, "رمز عبور جدید و تکرار آن مطابقت ندارند.")
+            return render(request, self.template_name)
+
+        if len(new_password) < 8:
+            messages.error(request, "رمز عبور باید حداقل ۸ کاراکتر باشد.")
+            return render(request, self.template_name)
+
+        user.set_password(new_password)
+        user.save()
+        update_session_auth_hash(request, user)
+        messages.success(request, "رمز عبور با موفقیت تغییر کرد.")
+        return render(request, self.template_name)
