@@ -37,16 +37,19 @@ urlpatterns = [
 
     # Appointments
     path('appointments/', admin_views.AdminAppointmentListView.as_view(), name='admin_appointment_list'),
+    path('appointments/add/', admin_views.AdminAppointmentCreateView.as_view(), name='admin_appointment_add'),
     path('appointments/<int:pk>/edit/', admin_views.AdminAppointmentEditView.as_view(), name='admin_appointment_edit'),
     path('appointments/<int:pk>/delete/', admin_views.AdminAppointmentDeleteView.as_view(), name='admin_appointment_delete'),
 
     # Payments
     path('payments/', admin_views.AdminPaymentListView.as_view(), name='admin_payment_list'),
+    path('payments/add/', admin_views.AdminPaymentCreateView.as_view(), name='admin_payment_add'),
     path('payments/<int:pk>/edit/', admin_views.AdminPaymentEditView.as_view(), name='admin_payment_edit'),
     path('payments/<int:pk>/delete/', admin_views.AdminPaymentDeleteView.as_view(), name='admin_payment_delete'),
 
     # Reviews
     path('reviews/', admin_views.AdminReviewListView.as_view(), name='admin_review_list'),
+    path('reviews/add/', admin_views.AdminReviewCreateView.as_view(), name='admin_review_add'),
     path('reviews/<int:pk>/edit/', admin_views.AdminReviewEditView.as_view(), name='admin_review_edit'),
     path('reviews/<int:pk>/delete/', admin_views.AdminReviewDeleteView.as_view(), name='admin_review_delete'),
 ]

@@ -640,6 +640,45 @@ class AdminAppointmentListView(AdminRequiredMixin, ListView):
         return ctx
 
 
+class AdminAppointmentCreateView(AdminRequiredMixin, View):
+    def get(self, request):
+        return render(request, 'website/admin/form.html', {
+            'title': 'Add Appointment',
+            'model_name': 'appointment',
+            'fields': [
+                {'name': 'patient', 'label': 'Patient', 'type': 'select', 'required': True,
+                 'options': [(p.pk, f"{p.full_name} - {p.user.phone_number}") for p in PatientProfile.objects.select_related('user').all()]},
+                {'name': 'doctor', 'label': 'Doctor', 'type': 'select', 'required': True,
+                 'options': [(d.pk, f"{d.full_name} - {d.specialty.title}") for d in DoctorProfile.objects.select_related('specialty').all()]},
+                {'name': 'time_slot', 'label': 'Time Slot', 'type': 'select', 'required': True,
+                 'options': [(ts.pk, f"{ts.doctor.full_name} - {ts.date} {ts.start_time}-{ts.end_time}")
+                             for ts in TimeSlot.objects.filter(is_available=True).select_related('doctor')]},
+                {'name': 'status', 'label': 'Status', 'type': 'select', 'required': True,
+                 'options': [('pending', 'Pending'), ('confirmed', 'Confirmed'),
+                             ('cancelled', 'Cancelled'), ('completed', 'Completed')]},
+                {'name': 'notes', 'label': 'Notes', 'type': 'textarea', 'required': False},
+            ],
+            'back_url': 'website:admin_appointment_list',
+        })
+
+    def post(self, request):
+        time_slot = get_object_or_404(TimeSlot, pk=request.POST.get('time_slot'))
+        patient = get_object_or_404(PatientProfile, pk=request.POST.get('patient'))
+        doctor = get_object_or_404(DoctorProfile, pk=request.POST.get('doctor'))
+
+        Appointment.objects.create(
+            patient=patient,
+            doctor=doctor,
+            time_slot=time_slot,
+            status=request.POST.get('status', 'pending'),
+            notes=request.POST.get('notes', ''),
+        )
+        time_slot.is_available = False
+        time_slot.save()
+        messages.success(request, 'Appointment created successfully.')
+        return redirect('website:admin_appointment_list')
+
+
 class AdminAppointmentEditView(AdminRequiredMixin, View):
     def get(self, request, pk):
         appt = get_object_or_404(Appointment, pk=pk)
@@ -702,6 +741,38 @@ class AdminPaymentListView(AdminRequiredMixin, ListView):
         ctx['add_url'] = 'website:admin_payment_add'
         ctx['search_placeholder'] = 'Search by patient name or gateway ref...'
         return ctx
+
+
+class AdminPaymentCreateView(AdminRequiredMixin, View):
+    def get(self, request):
+        return render(request, 'website/admin/form.html', {
+            'title': 'Add Payment',
+            'model_name': 'payment',
+            'fields': [
+                {'name': 'patient', 'label': 'Patient', 'type': 'select', 'required': True,
+                 'options': [(p.pk, f"{p.full_name} - {p.user.phone_number}") for p in PatientProfile.objects.select_related('user').all()]},
+                {'name': 'appointment', 'label': 'Appointment', 'type': 'select', 'required': True,
+                 'options': [(a.pk, f"#{a.pk} - {a.patient.full_name} → {a.doctor.full_name}")
+                             for a in Appointment.objects.select_related('patient', 'doctor').all()]},
+                {'name': 'amount', 'label': 'Amount (Toman)', 'type': 'number', 'required': True},
+                {'name': 'status', 'label': 'Status', 'type': 'select', 'required': True,
+                 'options': [('pending', 'Pending'), ('successful', 'Successful'),
+                             ('failed', 'Failed'), ('refunded', 'Refunded')]},
+                {'name': 'gateway_ref', 'label': 'Gateway Ref', 'type': 'text', 'required': False},
+            ],
+            'back_url': 'website:admin_payment_list',
+        })
+
+    def post(self, request):
+        payment = Payment.objects.create(
+            patient_id=request.POST.get('patient'),
+            appointment_id=request.POST.get('appointment'),
+            amount=int(request.POST.get('amount', 0)),
+            status=request.POST.get('status', 'pending'),
+            gateway_ref=request.POST.get('gateway_ref', ''),
+        )
+        messages.success(request, 'Payment created successfully.')
+        return redirect('website:admin_payment_list')
 
 
 class AdminPaymentEditView(AdminRequiredMixin, View):
@@ -775,6 +846,37 @@ class AdminReviewListView(AdminRequiredMixin, ListView):
         ctx['add_url'] = 'website:admin_review_add'
         ctx['search_placeholder'] = 'Search by patient or doctor name...'
         return ctx
+
+
+class AdminReviewCreateView(AdminRequiredMixin, View):
+    def get(self, request):
+        return render(request, 'website/admin/form.html', {
+            'title': 'Add Review',
+            'model_name': 'review',
+            'fields': [
+                {'name': 'patient', 'label': 'Patient', 'type': 'select', 'required': True,
+                 'options': [(p.pk, f"{p.full_name} - {p.user.phone_number}") for p in PatientProfile.objects.select_related('user').all()]},
+                {'name': 'doctor', 'label': 'Doctor', 'type': 'select', 'required': True,
+                 'options': [(d.pk, f"{d.full_name} - {d.specialty.title}") for d in DoctorProfile.objects.select_related('specialty').all()]},
+                {'name': 'appointment', 'label': 'Appointment', 'type': 'select', 'required': True,
+                 'options': [(a.pk, f"#{a.pk} - {a.patient.full_name} → {a.doctor.full_name}")
+                             for a in Appointment.objects.filter(status='completed').select_related('patient', 'doctor')]},
+                {'name': 'rating', 'label': 'Rating (1-5)', 'type': 'number', 'required': True},
+                {'name': 'comment', 'label': 'Comment', 'type': 'textarea', 'required': False},
+            ],
+            'back_url': 'website:admin_review_list',
+        })
+
+    def post(self, request):
+        review = Review.objects.create(
+            patient_id=request.POST.get('patient'),
+            doctor_id=request.POST.get('doctor'),
+            appointment_id=request.POST.get('appointment'),
+            rating=int(request.POST.get('rating', 5)),
+            comment=request.POST.get('comment', ''),
+        )
+        messages.success(request, 'Review created successfully.')
+        return redirect('website:admin_review_list')
 
 
 class AdminReviewEditView(AdminRequiredMixin, View):
