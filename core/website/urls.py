@@ -1,5 +1,6 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
+from . import admin_urls
 
 app_name = "website"
 
@@ -15,4 +16,7 @@ urlpatterns = [
     path("accounts/login/", views.LoginView.as_view(), name="login"),
     path("accounts/register/", views.RegisterView.as_view(), name="register"),
     path("accounts/logout/", views.LogoutView.as_view(), name="logout"),
+
+    # Admin Panel
+    path("panel/", include(admin_urls)),
 ]
