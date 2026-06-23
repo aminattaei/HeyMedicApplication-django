@@ -1,6 +1,6 @@
 # HeyMedic
 
-HeyMedic is a Django-based healthcare platform connecting patients and doctors in Iran. It supports phone-number authentication, role-based access (admin, patient, doctor), appointment booking, online payments, patient reviews, and a fully responsive frontend.
+HeyMedic is a Django-based healthcare platform connecting patients and doctors in Iran. It supports phone-number authentication, role-based access , appointment booking, online payments, patient reviews, and a fully responsive frontend.
 
 ## Features
 
