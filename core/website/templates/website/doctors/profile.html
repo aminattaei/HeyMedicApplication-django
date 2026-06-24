@@ -69,12 +69,30 @@
                     <span class="text-gray-400 text-sm">از ۵</span>
                 </div>
 
-                <h3 class="font-bold text-gray-800 mb-3">انتخاب تاریخ نوبت</h3>
-                <input type="date" id="slot-date" min="" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 mb-4 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                <h3 class="font-bold text-gray-800 mb-4">نوبت‌های خالی</h3>
 
-                <div id="slots-container" class="space-y-2 mb-4">
-                    <p class="text-gray-400 text-sm text-center py-4">تاریخ را انتخاب کنید</p>
-                </div>
+                {% if slots_by_date %}
+                    <div class="space-y-4 mb-4 max-h-[500px] overflow-y-auto pr-1" id="slots-scroll">
+                        {% for date, slots in slots_by_date.items %}
+                            <div class="border border-gray-100 rounded-xl overflow-hidden">
+                                <div class="bg-primary-50 px-4 py-2 flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    <span class="text-sm font-bold text-primary-700">{{ date|date:"l j F" }}</span>
+                                </div>
+                                <div class="p-3 grid grid-cols-2 gap-2">
+                                    {% for slot in slots %}
+                                        <button data-id="{{ slot.id }}" data-start="{{ slot.start_time|time:"H:i" }}" data-end="{{ slot.end_time|time:"H:i" }}" data-date="{{ date|date:"j F" }}"
+                                            class="slot-btn border border-gray-200 rounded-lg px-3 py-2.5 text-center hover:border-primary-500 hover:bg-primary-50 transition text-sm">
+                                            <span class="text-gray-700 font-medium">{{ slot.start_time|time:"H:i" }} - {{ slot.end_time|time:"H:i" }}</span>
+                                        </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-gray-400 text-sm text-center py-6">نوبت خالی وجود ندارد</p>
+                {% endif %}
 
                 <div id="selected-slot-info" class="hidden bg-primary-50 p-4 rounded-xl mb-4">
                     <p class="text-sm text-primary-700 font-medium" id="selected-slot-text"></p>
@@ -91,53 +109,20 @@
 
 {% block extra_js %}
 <script>
-    const doctorId = {{ doctor.pk }};
-    const dateInput = document.getElementById('slot-date');
-    const slotsContainer = document.getElementById('slots-container');
     const bookBtn = document.getElementById('book-btn');
     const selectedSlotInfo = document.getElementById('selected-slot-info');
     const selectedSlotText = document.getElementById('selected-slot-text');
     let selectedSlotId = null;
 
-    dateInput.min = new Date().toISOString().split('T')[0];
-
-    dateInput.addEventListener('change', async function() {
-        const date = this.value;
-        slotsContainer.innerHTML = '<p class="text-gray-400 text-sm text-center py-4">در حال بارگذاری...</p>';
-        selectedSlotId = null;
-        bookBtn.disabled = true;
-        selectedSlotInfo.classList.add('hidden');
-
-        try {
-            const res = await fetch(`/api/v1/slots/?doctor_id=${doctorId}&date=${date}&available_only=true`);
-            const slots = await res.json();
-
-            if (slots.length === 0) {
-                slotsContainer.innerHTML = '<p class="text-gray-400 text-sm text-center py-4">ساعت خالی وجود ندارد</p>';
-                return;
-            }
-
-            slotsContainer.innerHTML = slots.map(slot => `
-                <button data-id="${slot.id}" data-start="${slot.start_time}" data-end="${slot.end_time}"
-                    class="slot-btn w-full border border-gray-200 rounded-xl px-4 py-3 text-right hover:border-primary-500 hover:bg-primary-50 transition flex justify-between items-center">
-                    <span class="text-gray-700 font-medium">${slot.start_time.substring(0,5)} - ${slot.end_time.substring(0,5)}</span>
-                    <span class="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">خالی</span>
-                </button>
-            `).join('');
-
-            document.querySelectorAll('.slot-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('border-primary-500', 'bg-primary-50'));
-                    this.classList.add('border-primary-500', 'bg-primary-50');
-                    selectedSlotId = this.dataset.id;
-                    selectedSlotText.textContent = `ساعت ${this.dataset.start.substring(0,5)} تا ${this.dataset.end.substring(0,5)}`;
-                    selectedSlotInfo.classList.remove('hidden');
-                    bookBtn.disabled = false;
-                });
-            });
-        } catch(e) {
-            slotsContainer.innerHTML = '<p class="text-red-400 text-sm text-center py-4">خطا در بارگذاری</p>';
-        }
+    document.querySelectorAll('.slot-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('border-primary-500', 'bg-primary-50'));
+            this.classList.add('border-primary-500', 'bg-primary-50');
+            selectedSlotId = this.dataset.id;
+            selectedSlotText.textContent = `${this.dataset.date} — ساعت ${this.dataset.start} تا ${this.dataset.end}`;
+            selectedSlotInfo.classList.remove('hidden');
+            bookBtn.disabled = false;
+        });
     });
 
     bookBtn.addEventListener('click', async function() {

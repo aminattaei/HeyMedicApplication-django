@@ -10,16 +10,16 @@ Main URL patterns:
     /api/docs/         - Swagger UI (interactive API documentation)
 """
 
+from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,
 )
-from core.admin import admin_site
 
 urlpatterns = [
     path("", include("website.urls")),
-    path("admin/", admin_site.urls),
+    path("admin/", admin.site.urls),
 
     # DRF browsable auth
     path("api-auth/", include("rest_framework.urls")),

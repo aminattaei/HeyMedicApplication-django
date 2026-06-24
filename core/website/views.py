@@ -46,9 +46,26 @@ class DoctorProfileView(DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+        from django.utils import timezone
+        from itertools import groupby
+        from operator import attrgetter
+
         ctx['reviews'] = Review.objects.filter(
             doctor=self.object
         ).select_related('patient')[:10]
+
+        today = timezone.now().date()
+        available_slots = TimeSlot.objects.filter(
+            doctor=self.object,
+            is_available=True,
+            date__gte=today,
+        ).order_by('date', 'start_time')
+
+        slots_by_date = {}
+        for date, group in groupby(available_slots, key=attrgetter('date')):
+            slots_by_date[date] = list(group)
+        ctx['slots_by_date'] = slots_by_date
+
         return ctx
 
 

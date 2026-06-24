@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.forms import UserChangeForm, UserCreationForm
+from django.contrib.auth.forms import UserChangeForm
 from django.utils.html import format_html
 
 from .models import User, PatientProfile, Specialty, DoctorProfile
@@ -10,12 +10,6 @@ class CustomUserChangeForm(UserChangeForm):
     class Meta:
         model = User
         fields = '__all__'
-
-
-class CustomUserCreationForm(UserCreationForm):
-    class Meta:
-        model = User
-        fields = ('phone_number', 'email', 'role')
 
 
 class PatientProfileInline(admin.StackedInline):
@@ -34,7 +28,6 @@ class DoctorProfileInline(admin.StackedInline):
 
 class CustomUserAdmin(UserAdmin):
     form = CustomUserChangeForm
-    add_form = CustomUserCreationForm
 
     list_display = ('phone_number', 'email', 'role', 'is_verified', 'is_staff', 'get_created_at')
     list_filter = ('role', 'is_verified', 'is_staff', 'is_active', 'created_at')
@@ -49,12 +42,8 @@ class CustomUserAdmin(UserAdmin):
         ('Important dates', {'fields': ('last_login', 'created_at')}),
     )
 
-    add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('phone_number', 'email', 'role', 'password1', 'password2'),
-        }),
-    )
+    def has_add_permission(self, request):
+        return False
 
     def get_created_at(self, obj):
         return obj.created_at
