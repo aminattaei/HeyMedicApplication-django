@@ -1,8 +1,12 @@
+from django.db import models
+from .users import User
+
 class DoctorProfile(models.Model):
     user = models.OneToOneField(
         User, 
         on_delete=models.CASCADE, 
-        related_name='doctor_profile'
+        related_name='doctor_profile',
+        verbose_name="کاربر"
     )
     specialty = models.ForeignKey(
         'Specialty', 
@@ -22,8 +26,8 @@ class DoctorProfile(models.Model):
     rating_avg = models.FloatField(default=0.0, verbose_name="میانگین امتیاز")
     
     class Meta:
-        verbose_name = "پروفایل پزشک"
-        verbose_name_plural = "پروفایل پزشکان"
+        verbose_name = "Doctor Profile"
+        verbose_name_plural = "Doctors Profile"
     
     def __str__(self):
         return f"{self.full_name} - {self.specialty.title}"

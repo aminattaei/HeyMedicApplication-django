@@ -1,0 +1,90 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}{{ title }} | {{ site_title }}{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    .dashboard-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    .stat-card {
+        background: #fff;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    .stat-card h3 {
+        margin: 0;
+        font-size: 2rem;
+        color: #417690;
+    }
+    .stat-card p {
+        margin: 0.5rem 0 0;
+        color: #666;
+        font-size: 0.9rem;
+    }
+    .stat-card.success { border-left: 4px solid #28a745; }
+    .stat-card.warning { border-left: 4px solid #ffc107; }
+    .stat-card.danger { border-left: 4px solid #dc3545; }
+    .stat-card.info { border-left: 4px solid #17a2b8; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>{% translate 'Platform Dashboard' %}</h1>
+
+<div class="dashboard-stats">
+    <div class="stat-card info">
+        <h3>{{ stats.total_users }}</h3>
+        <p>{% translate 'Total Users' %}</p>
+    </div>
+    <div class="stat-card success">
+        <h3>{{ stats.total_doctors }}</h3>
+        <p>{% translate 'Doctors' %}</p>
+    </div>
+    <div class="stat-card info">
+        <h3>{{ stats.total_patients }}</h3>
+        <p>{% translate 'Patients' %}</p>
+    </div>
+    <div class="stat-card warning">
+        <h3>{{ stats.total_appointments }}</h3>
+        <p>{% translate 'Total Appointments' %}</p>
+    </div>
+    <div class="stat-card warning">
+        <h3>{{ stats.pending_appointments }}</h3>
+        <p>{% translate 'Pending Appointments' %}</p>
+    </div>
+    <div class="stat-card success">
+        <h3>{{ stats.completed_appointments }}</h3>
+        <p>{% translate 'Completed Appointments' %}</p>
+    </div>
+    <div class="stat-card danger">
+        <h3>{{ stats.cancelled_appointments }}</h3>
+        <p>{% translate 'Cancelled Appointments' %}</p>
+    </div>
+    <div class="stat-card success">
+        <h3>{{ stats.total_payments }}</h3>
+        <p>{% translate 'Total Payments' %}</p>
+    </div>
+    <div class="stat-card success">
+        <h3>{{ stats.successful_payments }}</h3>
+        <p>{% translate 'Successful Payments' %}</p>
+    </div>
+    <div class="stat-card info">
+        <h3>{{ stats.total_reviews }}</h3>
+        <p>{% translate 'Total Reviews' %}</p>
+    </div>
+    <div class="stat-card warning">
+        <h3>{{ stats.available_slots }}</h3>
+        <p>{% translate 'Available Slots' %}</p>
+    </div>
+</div>
+
+{{ block.super }}
+{% endblock %}

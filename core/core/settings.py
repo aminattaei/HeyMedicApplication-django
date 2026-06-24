@@ -51,6 +51,9 @@ INSTALLED_APPS = [
     'drf_spectacular',
     "accounts",
     "website",
+    "appointments",
+    "payments",
+    "reviews",
 ]
 
 MIDDLEWARE = [
@@ -165,8 +168,32 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # AUTH_USER_MODEL = "accounts.User"
 
 REST_FRAMEWORK = {
-    
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+}
+
+DJOSER = {
+    'LOGIN_FIELD': 'phone_number',
+    'USER_ID_FIELD': 'id',
+    'SEND_ACTIVATION_EMAIL': False,
+}
+
+# drf-spectacular (OpenAPI / Swagger) configuration
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'HeyMedic API',
+    'DESCRIPTION': 'Healthcare platform API for connecting patients and doctors',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
 
 # Accounting configs
