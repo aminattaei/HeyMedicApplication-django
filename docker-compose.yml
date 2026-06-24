@@ -19,7 +19,9 @@ services:
       retries: 10
 
   backend:
-    build: .
+    build:
+      context: .
+      dockerfile: ./dockerfiles/dev/django/Dockerfile
     container_name: HeyMedic-backend
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
@@ -27,7 +29,8 @@ services:
     ports:
       - "8000:8000"
     env_file:
-      - .env
+      - path:  ./envs/dev/django/.env
+
     depends_on:
       db:
         condition: service_healthy
