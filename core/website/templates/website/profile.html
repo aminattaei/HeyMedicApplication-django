@@ -1,0 +1,213 @@
+{% extends "website/base.html" %}
+
+{% block title %}پروفایل - HeyMedic{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10">
+
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">پروفایل کاربری</h1>
+        <p class="text-gray-500">اطلاعات حساب خود را مشاهده و ویرایش کنید</p>
+    </div>
+
+    {% if messages %}
+        {% for msg in messages %}
+            <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-6 text-sm">
+                {{ msg }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if error %}
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-sm">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <div class="space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center">
+                <div class="w-24 h-24 bg-primary-100 rounded-3xl flex items-center justify-center mx-auto mb-4">
+                    <span class="text-primary-700 font-bold text-4xl">{{ user.phone_number|truncatechars:2 }}</span>
+                </div>
+                <h2 class="text-xl font-bold text-gray-800">
+                    {% if profile %}{{ profile.full_name }}{% else %}کاربر جدید{% endif %}
+                </h2>
+                <span class="text-sm text-primary-600 bg-primary-50 px-3 py-1 rounded-full mt-2 inline-block">
+                    {% if user.role == 'doctor' %}پزشک
+                    {% elif user.role == 'patient' %}بیمار
+                    {% else %}ادمین{% endif %}
+                </span>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <h3 class="font-bold text-gray-800 mb-4">اطلاعات حساب</h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">شماره موبایل</span>
+                        <span class="font-medium text-gray-800" dir="ltr">{{ user.phone_number }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">ایمیل</span>
+                        <span class="font-medium text-gray-800">{{ user.email|default:"-" }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">تاریخ عضویت</span>
+                        <span class="font-medium text-gray-800">{{ user.created_at|date:"Y/m/d" }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">وضعیت حساب</span>
+                        <span class="font-medium {% if user.is_verified %}text-green-600{% else %}text-yellow-600{% endif %}">
+                            {% if user.is_verified %}تایید شده{% else %}در انتظار تایید{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {% if user.role == 'doctor' and doctor_profile %}
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <h3 class="font-bold text-gray-800 mb-4">اطلاعات پزشکی</h3>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">نظام پزشکی</span>
+                        <span class="font-medium text-gray-800">{{ doctor_profile.medical_license_no }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">تخصص</span>
+                        <span class="font-medium text-gray-800">{{ doctor_profile.specialty.title }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">هزینه ویزیت</span>
+                        <span class="font-medium text-primary-600">{{ doctor_profile.price|floatformat:0 }} تومان</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500">امتیاز</span>
+                        <span class="font-medium text-yellow-600">{{ doctor_profile.rating_avg }} / 5</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="lg:col-span-2">
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">ویرایش پروفایل</h2>
+
+                <form method="post" class="space-y-5">
+                    {% csrf_token %}
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">نام کامل</label>
+                            <input type="text" name="full_name" value="{{ profile.full_name|default:'' }}"
+                                class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">ایمیل</label>
+                            <input type="email" name="email" value="{{ user.email|default:'' }}"
+                                class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-left" dir="ltr">
+                        </div>
+                    </div>
+
+                    {% if user.role == 'patient' and patient_profile %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">کد ملی</label>
+                            <input type="text" name="national_id" value="{{ patient_profile.national_id }}"
+                                maxlength="10" dir="ltr"
+                                class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-left">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">تاریخ تولد</label>
+                            <input type="date" name="birth_date" value="{{ patient_profile.birth_date|date:'Y-m-d' }}"
+                                class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">جنسیت</label>
+                        <select name="gender" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white">
+                            <option value="male" {% if patient_profile.gender == 'male' %}selected{% endif %}>مرد</option>
+                            <option value="female" {% if patient_profile.gender == 'female' %}selected{% endif %}>زن</option>
+                            <option value="other" {% if patient_profile.gender == 'other' %}selected{% endif %}>سایر</option>
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    {% if user.role == 'doctor' and doctor_profile %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">شماره نظام پزشکی</label>
+                            <input type="text" name="medical_license_no" value="{{ doctor_profile.medical_license_no }}"
+                                class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">هزینه ویزیت (تومان)</label>
+                            <input type="number" name="price" value="{{ doctor_profile.price }}"
+                                class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-left" dir="ltr">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">تخصص</label>
+                        <select name="specialty" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white">
+                            {% for spec in specialties %}
+                                <option value="{{ spec.pk }}" {% if doctor_profile.specialty.pk == spec.pk %}selected{% endif %}>{{ spec.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">بیوگرافی</label>
+                        <textarea name="bio" rows="3"
+                            class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none resize-none">{{ doctor_profile.bio }}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">آدرس کلینیک</label>
+                        <textarea name="clinic_address" rows="2"
+                            class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none resize-none">{{ doctor_profile.clinic_address }}</textarea>
+                    </div>
+                    {% endif %}
+
+                    <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                        <a href="{% url 'website:home_page' %}" class="px-6 py-2.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition font-medium">
+                            انصراف
+                        </a>
+                        <button type="submit" class="px-6 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition font-medium">
+                            ذخیره تغییرات
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 mt-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">تغییر رمز عبور</h2>
+                <form method="post" action="{% url 'website:change_password' %}" class="space-y-5">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="change_password">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">رمز عبور فعلی</label>
+                        <input type="password" name="old_password" required
+                            class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">رمز عبور جدید</label>
+                            <input type="password" name="new_password" required
+                                class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">تکرار رمز عبور</label>
+                            <input type="password" name="new_password_confirm" required
+                                class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" class="px-6 py-2.5 bg-gray-800 text-white rounded-xl hover:bg-gray-900 transition font-medium">
+                            تغییر رمز عبور
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

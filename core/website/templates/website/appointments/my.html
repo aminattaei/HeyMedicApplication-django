@@ -1,0 +1,92 @@
+{% extends "website/base.html" %}
+
+{% block title %}نوبت‌های من - HeyMedic{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10">
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">نوبت‌های من</h1>
+    <p class="text-gray-500 mb-8">لیست نوبت‌های رزرو شده شما</p>
+
+    {% if appointments %}
+        <div class="space-y-4">
+            {% for apt in appointments %}
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center">
+                                <span class="text-primary-700 font-bold">{{ apt.doctor.full_name|truncatechars:1 }}</span>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-800">{{ apt.doctor.full_name }}</h3>
+                                <span class="text-sm text-primary-600">{{ apt.doctor.specialty.title }}</span>
+                            </div>
+                        </div>
+                        <span class="px-3 py-1 rounded-full text-sm font-medium
+                            {% if apt.status == 'pending' %}bg-yellow-100 text-yellow-700
+                            {% elif apt.status == 'confirmed' %}bg-green-100 text-green-700
+                            {% elif apt.status == 'cancelled' %}bg-red-100 text-red-700
+                            {% elif apt.status == 'completed' %}bg-blue-100 text-blue-700
+                            {% endif %}">
+                            {{ apt.get_status_display }}
+                        </span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div class="bg-gray-50 p-3 rounded-xl">
+                            <span class="text-gray-400 block mb-1">تاریخ</span>
+                            <span class="font-medium text-gray-700">{{ apt.time_slot.date }}</span>
+                        </div>
+                        <div class="bg-gray-50 p-3 rounded-xl">
+                            <span class="text-gray-400 block mb-1">ساعت</span>
+                            <span class="font-medium text-gray-700">{{ apt.time_slot.start_time|time:"H:i" }} - {{ apt.time_slot.end_time|time:"H:i" }}</span>
+                        </div>
+                    </div>
+                    {% if apt.status == 'pending' or apt.status == 'confirmed' %}
+                        <div class="mt-4 flex justify-end">
+                            <button onclick="cancelAppointment({{ apt.pk }})" class="text-sm text-red-600 hover:text-red-700 font-medium border border-red-200 px-4 py-2 rounded-xl hover:bg-red-50 transition">
+                                لغو نوبت
+                            </button>
+                        </div>
+                    {% endif %}
+                    {% if apt.status == 'completed' and not apt.review %}
+                        <div class="mt-4 flex justify-end">
+                            <a href="{% url 'website:doctor_profile' apt.doctor.pk %}" class="text-sm text-primary-600 hover:text-primary-700 font-medium border border-primary-200 px-4 py-2 rounded-xl hover:bg-primary-50 transition">
+                                ثبت نظر
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-16 bg-white rounded-2xl border border-gray-100">
+            <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <p class="text-gray-500 text-lg mb-4">هنوز نوبتی رزرو نکرده‌اید.</p>
+            <a href="{% url 'website:doctor_list' %}" class="inline-block bg-primary-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-primary-700 transition">
+                جستجوی پزشک
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function cancelAppointment(id) {
+    if (!confirm('آیا از لغو نوبت اطمینان دارید؟')) return;
+    try {
+        const res = await fetch(`/api/v1/appointments/${id}/cancel/`, {
+            method: 'PATCH',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+        });
+        if (res.ok) {
+            location.reload();
+        } else {
+            const data = await res.json();
+            alert(data.detail || 'خطا در لغو نوبت');
+        }
+    } catch(e) {
+        alert('خطا در ارتباط با سرور');
+    }
+}
+</script>
+{% endblock %}

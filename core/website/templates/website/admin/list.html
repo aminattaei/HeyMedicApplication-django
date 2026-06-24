@@ -1,0 +1,320 @@
+{% extends "website/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100" dir="rtl">
+    {% include "website/admin/components/sidebar.html" %}
+
+    <div class="mr-64 p-8">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">{{ title }}</h1>
+                <p class="text-gray-500 mt-2">Manage {{ title|lower }}</p>
+            </div>
+            {% if add_url %}
+            <a href="{% url add_url %}"
+               class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-bold flex items-center">
+                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                افزودن {{ title }}
+            </a>
+            {% endif %}
+        </div>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="mb-4 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <div class="bg-white rounded-lg shadow mb-6">
+            <div class="p-6 border-b">
+                <form method="get" class="flex gap-4">
+                    <input type="text" name="search" value="{{ request.GET.search|default:'' }}"
+                           placeholder="{{ search_placeholder }}"
+                           class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+
+                    {% if model_name == 'user' %}
+                    <select name="role" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Roles</option>
+                        <option value="admin" {% if request.GET.role == 'admin' %}selected{% endif %}>Admin</option>
+                        <option value="patient" {% if request.GET.role == 'patient' %}selected{% endif %}>Patient</option>
+                        <option value="doctor" {% if request.GET.role == 'doctor' %}selected{% endif %}>Doctor</option>
+                    </select>
+                    {% elif model_name == 'appointment' %}
+                    <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Status</option>
+                        <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="confirmed" {% if request.GET.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                        <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed</option>
+                        <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                    </select>
+                    {% elif model_name == 'payment' %}
+                    <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Status</option>
+                        <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="successful" {% if request.GET.status == 'successful' %}selected{% endif %}>Successful</option>
+                        <option value="failed" {% if request.GET.status == 'failed' %}selected{% endif %}>Failed</option>
+                        <option value="refunded" {% if request.GET.status == 'refunded' %}selected{% endif %}>Refunded</option>
+                    </select>
+                    {% elif model_name == 'review' %}
+                    <select name="rating" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Ratings</option>
+                        {% for i in "12345" %}
+                        <option value="{{ i }}" {% if request.GET.rating == i %}selected{% endif %}>{{ i }} Star{{ i|pluralize }}</option>
+                        {% endfor %}
+                    </select>
+                    {% elif model_name == 'timeslot' %}
+                    <select name="available" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">All</option>
+                        <option value="true" {% if request.GET.available == 'true' %}selected{% endif %}>Available</option>
+                        <option value="false" {% if request.GET.available == 'false' %}selected{% endif %}>Booked</option>
+                    </select>
+                    {% elif model_name == 'doctor' and specialties %}
+                    <select name="specialty" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">All Specialties</option>
+                        {% for spec in specialties %}
+                        <option value="{{ spec.pk }}" {% if request.GET.specialty == spec.pk|stringformat:"d" %}selected{% endif %}>{{ spec.title }}</option>
+                        {% endfor %}
+                    </select>
+                    {% endif %}
+
+                    <button type="submit"
+                            class="bg-gray-800 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition">
+                        جستجو
+                    </button>
+                </form>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                            {% for header in headers %}
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">{{ header }}</th>
+                            {% endfor %}
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for item in items %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ forloop.counter }}</td>
+
+                            {% if model_name == 'user' %}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ item.phone_number }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.email|default:"-" }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs rounded-full
+                                    {% if item.role == 'admin' %}bg-purple-100 text-purple-800
+                                    {% elif item.role == 'doctor' %}bg-green-100 text-green-800
+                                    {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                    {{ item.role }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if item.is_verified %}
+                                <span class="text-green-600">&#10003;</span>
+                                {% else %}
+                                <span class="text-red-600">&#10007;</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if item.is_staff %}
+                                <span class="text-green-600">&#10003;</span>
+                                {% else %}
+                                <span class="text-red-600">&#10007;</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.created_at|date:"Y-m-d" }}</td>
+
+                            {% elif model_name == 'doctor' %}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ item.full_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.specialty.title }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.medical_license_no }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.price|floatformat:0 }} T</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span class="{% if item.rating_avg >= 4 %}text-green-600{% elif item.rating_avg >= 3 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                    {{ item.rating_avg|floatformat:1 }} / 5.0
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.user.phone_number }}</td>
+
+                            {% elif model_name == 'patient' %}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ item.full_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.national_id }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.gender }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.birth_date }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.user.phone_number }}</td>
+
+                            {% elif model_name == 'specialty' %}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ item.title }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.slug }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.doctors.count }}</td>
+
+                            {% elif model_name == 'timeslot' %}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ item.doctor.full_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.doctor.specialty.title }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.date }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.start_time }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.end_time }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if item.is_available %}
+                                <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Available</span>
+                                {% else %}
+                                <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Booked</span>
+                                {% endif %}
+                            </td>
+
+                            {% elif model_name == 'appointment' %}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ item.patient.full_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.doctor.full_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.time_slot.date }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.time_slot.start_time }}-{{ item.time_slot.end_time }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs rounded-full
+                                    {% if item.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                    {% elif item.status == 'confirmed' %}bg-blue-100 text-blue-800
+                                    {% elif item.status == 'completed' %}bg-green-100 text-green-800
+                                    {% else %}bg-red-100 text-red-800{% endif %}">
+                                    {{ item.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.created_at|date:"Y-m-d H:i" }}</td>
+
+                            {% elif model_name == 'payment' %}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ item.patient.full_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.appointment.doctor.full_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.amount|floatformat:0 }} T</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 py-1 text-xs rounded-full
+                                    {% if item.status == 'successful' %}bg-green-100 text-green-800
+                                    {% elif item.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                    {% elif item.status == 'failed' %}bg-red-100 text-red-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ item.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.gateway_ref|default:"-" }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.paid_at|date:"Y-m-d H:i"|default:"-" }}</td>
+
+                            {% elif model_name == 'review' %}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ item.patient.full_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.doctor.full_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span class="{% if item.rating >= 4 %}text-green-600{% elif item.rating >= 3 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                    {{ item.rating }}/5
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{{ item.comment|default:"-" }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.created_at|date:"Y-m-d" }}</td>
+                            {% endif %}
+
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div class="flex items-center gap-2">
+                                    {% if model_name != 'appointment' %}
+                                    <a href="{% url add_url %}".replace('add', '{{ item.pk }}/edit/')
+                                       class="text-blue-600 hover:text-blue-900">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
+                                    </a>
+                                    {% else %}
+                                    <a href="{% url 'website:admin_appointment_edit' item.pk %}"
+                                       class="text-blue-600 hover:text-blue-900">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
+                                    </a>
+                                    {% endif %}
+
+                                    <form method="post"
+                                          {% if model_name == 'user' %}action="{% url 'website:admin_user_delete' item.pk %}"
+                                          {% elif model_name == 'doctor' %}action="{% url 'website:admin_doctor_delete' item.pk %}"
+                                          {% elif model_name == 'patient' %}action="{% url 'website:admin_patient_delete' item.pk %}"
+                                          {% elif model_name == 'specialty' %}action="{% url 'website:admin_specialty_delete' item.pk %}"
+                                          {% elif model_name == 'timeslot' %}action="{% url 'website:admin_timeslot_delete' item.pk %}"
+                                          {% elif model_name == 'appointment' %}action="{% url 'website:admin_appointment_delete' item.pk %}"
+                                          {% elif model_name == 'payment' %}action="{% url 'website:admin_payment_delete' item.pk %}"
+                                          {% elif model_name == 'review' %}action="{% url 'website:admin_review_delete' item.pk %}"
+                                          {% endif %}
+                                          class="inline"
+                                          onsubmit="return confirm('Are you sure you want to delete this item?')">
+                                        {% csrf_token %}
+                                        <button type="submit" class="text-red-600 hover:text-red-900">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="{{ headers|length|add:2 }}" class="px-6 py-12 text-center text-gray-500">
+                                No items found.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if is_paginated %}
+            <div class="px-6 py-4 border-t">
+                <div class="flex items-center justify-between">
+                    <div class="text-sm text-gray-500">
+                        Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ paginator.count }} items
+                    </div>
+                    <div class="flex gap-2">
+                        {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}"
+                           class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
+                            Previous
+                        </a>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                        <a href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}"
+                           class="px-4 py-2 rounded-lg transition
+                                  {% if page_obj.number == num %}bg-blue-600 text-white{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">
+                            {{ num }}
+                        </a>
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}"
+                           class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition">
+                            Next
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('a[href*="/edit/"]').forEach(function(link) {
+        var href = link.getAttribute('href');
+        if (!href.includes('{% url')) {
+            var pk = href.split('/').filter(function(s) { return s && !isNaN(s); })[0];
+            if (pk) {
+                var baseUrl = href.replace('/' + pk + '/edit/', '');
+                link.setAttribute('href', baseUrl + '/' + pk + '/edit/');
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

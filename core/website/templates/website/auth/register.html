@@ -1,0 +1,59 @@
+{% extends "website/base.html" %}
+
+{% block title %}ثبت‌نام - HeyMedic{% endblock %}
+
+{% block content %}
+<div class="min-h-[70vh] flex items-center justify-center px-4 py-10">
+    <div class="w-full max-w-md">
+        <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+            <div class="text-center mb-8">
+                <div class="w-14 h-14 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <span class="text-primary-700 font-bold text-2xl">H</span>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">ثبت‌نام</h1>
+                <p class="text-gray-500 mt-1">حساب جدیدی بسازید</p>
+            </div>
+
+            {% if error %}
+                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 text-sm">
+                    {{ error }}
+                </div>
+            {% endif %}
+
+            <form method="post" class="space-y-5">
+                {% csrf_token %}
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">شماره موبایل</label>
+                    <input type="text" name="phone_number" required placeholder="0912xxxxxxx"
+                        class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-left" dir="ltr">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ایمیل (اختیاری)</label>
+                    <input type="email" name="email" placeholder="email@example.com"
+                        class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none text-left" dir="ltr">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">رمز عبور</label>
+                    <input type="password" name="password" required placeholder="حداقل ۸ کاراکتر"
+                        class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">نقش</label>
+                    <select name="role" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none bg-white">
+                        <option value="patient">بیمار</option>
+                        <option value="doctor">پزشک</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-primary-600 text-white py-3 rounded-xl font-bold hover:bg-primary-700 transition">
+                    ثبت‌نام
+                </button>
+            </form>
+
+            <p class="text-center text-sm text-gray-500 mt-6">
+                قبلاً ثبت‌نام کرده‌اید؟
+                <a href="{% url 'website:login' %}" class="text-primary-600 font-medium hover:text-primary-700">ورود</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

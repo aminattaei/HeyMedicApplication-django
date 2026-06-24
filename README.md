@@ -1,54 +1,69 @@
 <<<<<<< HEAD
 # HeyMedic
 
-HeyMedic is a Django-based healthcare platform for connecting patients and doctors. It supports phone-number authentication, role-based access (admin, patient, doctor), and is structured to grow into appointment booking, payments, and reviews.
-
-The project is in early development: the core user system and website are in place, with additional apps scaffolded for upcoming features.
+HeyMedic is a Django-based healthcare platform connecting patients and doctors in Iran. It supports phone-number authentication, role-based access , appointment booking, online payments, patient reviews, and a fully responsive frontend.
 
 ## Features
 
 ### Implemented
 
-- **Custom user model** — Phone number as the primary login identifier (Iran region default via `django-phonenumber-field`)
-- **Role-based users** — Admin, Patient, and Doctor roles with an `is_verified` flag
-- **Django Admin** — Customized user management in the admin panel
-- **Website** — Basic landing page at `/`
-- **REST API foundation** — Django REST Framework, JWT, Djoser, and OpenAPI docs (drf-spectacular) included in dependencies
-- **Docker support** — PostgreSQL and Django backend via Docker Compose
+- **Custom user model** — Phone number as the primary login identifier (Iran region)
+- **Role-based users** — Admin, Patient, and Doctor roles with `is_verified` flag
+- **Django Admin** — Customized user management for all models
+- **Appointments** — TimeSlot management (doctor), appointment booking (patient), cancellation
+- **Payments** — Payment initialization and verification (gateway-ready)
+- **Reviews** — Patient reviews with automatic doctor rating recalculation
+- **JWT Authentication** — Token-based auth via SimpleJWT + Djoser
+- **REST API** — Full CRUD APIs for all apps with OpenAPI/Swagger documentation
+- **Frontend** — Responsive RTL website with Tailwind CSS (CDN), Class-Based Views
+- **Docker support** — PostgreSQL + Django via Docker Compose
 
-### Planned (scaffolded apps)
+### Frontend Pages
 
-| App            | Purpose                          |
-|----------------|----------------------------------|
-| `appointments` | Doctor–patient appointment scheduling |
-| `payments`     | Payment processing               |
-| `reviews`      | Patient reviews and ratings      |
+| Page | Description |
+|------|-------------|
+| Landing page | Hero section, features, call-to-action |
+| Doctor list | Search and filter by specialty |
+| Doctor profile | View details, available slots, book appointment |
+| My appointments | Patient appointment list with cancel option |
+| Doctor dashboard | Manage time slots, view appointments |
+| Login / Register | Phone-number based authentication |
 
-These apps exist in the codebase but are not yet registered in `INSTALLED_APPS` or wired to URLs.
+### Planned
+
+| Feature | Technology |
+|---------|------------|
+| Chat | WebSocket + Django Channels |
+| Video calls | Jitsi integration |
+| Payment gateway | Zibal / IDPay / Mellat |
+| Email verification | Celery + Redis |
 
 ## Tech Stack
 
-| Layer        | Technology |
-|--------------|------------|
-| Backend      | Django 6.0, Python 3.12 |
-| API          | Django REST Framework, Simple JWT, Djoser, drf-spectacular |
-| Database     | PostgreSQL (production/Docker) or SQLite (local dev) |
-| Auth         | Custom user model, phone-number login |
-| Async tasks  | Celery, Redis, django-celery-results (dependencies included) |
-| Deployment   | Gunicorn, Docker |
-| Dev tools    | pytest, pytest-django, black, flake8, Faker |
+| Layer | Technology |
+|-------|------------|
+| Backend | Django 6.0, Python 3.12 |
+| API | Django REST Framework, SimpleJWT, Djoser, drf-spectacular |
+| Database | PostgreSQL (Docker) or SQLite (local dev) |
+| Auth | Custom user model, phone-number login, JWT tokens |
+| Frontend | HTML, Tailwind CSS (CDN), vanilla JavaScript |
+| Async tasks | Celery, Redis, django-celery-results |
+| Deployment | Gunicorn, Docker Compose |
+| Dev tools | pytest, pytest-django, black, flake8, Faker |
 
 ## Project Structure
 
 ```
 HeyMdicApplication/
-├── core/                      # Django project root
-│   ├── core/                  # Project settings, URLs, WSGI/ASGI
-│   ├── accounts/              # Custom User model and admin
-│   ├── website/               # Public-facing pages
-│   ├── appointments/          # (planned) Appointment scheduling
-│   ├── payments/              # (planned) Payment handling
-│   ├── reviews/               # (planned) Reviews and ratings
+├── core/                          # Django project root
+│   ├── core/                      # Settings, URLs, WSGI/ASGI
+│   ├── accounts/                  # Custom User model and admin
+│   ├── appointments/              # TimeSlot + Appointment models, API
+│   ├── payments/                  # Payment model, API
+│   ├── reviews/                   # Review model, API
+│   ├── website/                   # Frontend (CBVs, templates, static)
+│   │   ├── templates/website/     # HTML templates (RTL, Tailwind)
+│   │   └── static/website/        # CSS, JS files
 │   └── manage.py
 ├── requirements.txt
 ├── Dockerfile
@@ -60,12 +75,12 @@ HeyMdicApplication/
 
 - Python 3.12+
 - pip
-- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/) (optional, for containerized setup)
-- PostgreSQL 17 (optional; SQLite works for local development)
+- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/)
+- PostgreSQL 17 (via Docker)
 
 ## Environment Variables
 
-Create a `.env` file in the project root. Example:
+Create a `.env` file in the project root:
 
 ```env
 # Django
@@ -73,11 +88,11 @@ DJANGO_SECRET_KEY=your-secret-key-here
 DEBUG=True
 DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,backend
 
-# Database — use sqlite3 for simple local dev
+# Database — SQLite for local dev
 DATABASE_ENGINE=sqlite3
 DATABASE_NAME=db.sqlite3
 
-# Database — use postgresql with Docker or a local Postgres instance
+# Database — PostgreSQL with Docker
 # DATABASE_ENGINE=postgresql
 # DATABASE_NAME=heymedic
 # DATABASE_USERNAME=heymedic
@@ -86,21 +101,44 @@ DATABASE_NAME=db.sqlite3
 # DATABASE_PORT=5432
 ```
 
-| Variable               | Description                                      | Default              |
-|------------------------|--------------------------------------------------|----------------------|
-| `DJANGO_SECRET_KEY`    | Django secret key                                | `fallback-secret-key` |
-| `DEBUG`                | Enable debug mode                                | `True`               |
-| `DJANGO_ALLOWED_HOSTS` | Comma-separated allowed hosts                    | `backend`            |
-| `DATABASE_ENGINE`      | `sqlite3` or `postgresql`                        | —                    |
-| `DATABASE_NAME`        | Database name or SQLite file path                | `db.sqlite3`         |
-| `DATABASE_USERNAME`    | PostgreSQL username                              | —                    |
-| `DATABASE_PASSWORD`    | PostgreSQL password                              | —                    |
-| `DATABASE_HOST`        | PostgreSQL host                                  | `localhost`          |
-| `DATABASE_PORT`        | PostgreSQL port                                  | `5432`               |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DJANGO_SECRET_KEY` | Django secret key | `fallback-secret-key` |
+| `DEBUG` | Enable debug mode | `True` |
+| `DJANGO_ALLOWED_HOSTS` | Comma-separated allowed hosts | `backend` |
+| `DATABASE_ENGINE` | `sqlite3` or `postgresql` | — |
+| `DATABASE_NAME` | Database name or SQLite file path | `db.sqlite3` |
+| `DATABASE_USERNAME` | PostgreSQL username | — |
+| `DATABASE_PASSWORD` | PostgreSQL password | — |
+| `DATABASE_HOST` | PostgreSQL host | `localhost` |
+| `DATABASE_PORT` | PostgreSQL port | `5432` |
 
 ## Getting Started
 
-### Option 1: Local development (virtual environment)
+### Option 1: Docker Compose (Recommended)
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd HeyMdicApplication
+
+# Create .env with PostgreSQL settings (see Environment Variables)
+
+# Build and start services
+docker compose up --build
+
+# Run migrations
+docker compose exec backend python manage.py migrate
+
+# Create superuser
+docker compose exec backend python manage.py createsuperuser
+```
+
+Backend: [http://localhost:8000/](http://localhost:8000/)
+Admin: [http://localhost:8000/admin/](http://localhost:8000/admin/)
+Swagger: [http://localhost:8000/api/docs/](http://localhost:8000/api/docs/)
+
+### Option 2: Local development (virtual environment)
 
 ```bash
 # Clone the repository
@@ -114,53 +152,59 @@ source venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Create a .env file in the project root (see Environment Variables above)
+# Create .env file (see Environment Variables)
 
 # Run migrations
 cd core
 python manage.py migrate
 
-# Create a superuser (uses phone number as username)
+# Create superuser
 python manage.py createsuperuser
 
 # Start the development server
 python manage.py runserver
 ```
 
-Visit [http://127.0.0.1:8000/](http://127.0.0.1:8000/) for the home page and [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/) for the admin panel.
+## API Endpoints
 
-### Option 2: Docker Compose
+All APIs are available under `/api/v1/`:
+
+| Endpoint | Methods | Description |
+|----------|---------|-------------|
+| `/api/v1/appointments/slots/` | GET, POST | List/create time slots |
+| `/api/v1/appointments/appointments/` | GET, POST | List/create appointments |
+| `/api/v1/appointments/appointments/{id}/book/` | POST | Book an appointment |
+| `/api/v1/appointments/appointments/{id}/cancel/` | POST | Cancel an appointment |
+| `/api/v1/payments/` | GET, POST | List/create payments |
+| `/api/v1/payments/{id}/init_payment/` | POST | Initialize payment |
+| `/api/v1/payments/{id}/verify_payment/` | POST | Verify payment |
+| `/api/v1/reviews/` | GET, POST | List/create reviews |
+| `/api/auth/jwt/create/` | POST | Login (get JWT tokens) |
+| `/api/auth/jwt/refresh/` | POST | Refresh access token |
+| `/api/auth/users/` | POST | Register new user |
+
+### Authentication
 
 ```bash
-# Create .env with PostgreSQL settings (see Environment Variables)
-# DATABASE_ENGINE=postgresql
-# DATABASE_HOST=db
+# Login
+curl -X POST http://localhost:8000/api/auth/jwt/create/ \
+  -H "Content-Type: application/json" \
+  -d '{"phone_number": "+989123456789", "password": "yourpassword"}'
 
-docker compose up --build
-```
-
-The backend runs at [http://localhost:8000/](http://localhost:8000/). PostgreSQL is exposed on port `5432`.
-
-Run migrations inside the container:
-
-```bash
-docker compose exec backend python manage.py migrate
-docker compose exec backend python manage.py createsuperuser
+# Use token in requests
+curl http://localhost:8000/api/v1/appointments/appointments/ \
+  -H "Authorization: Bearer <access_token>"
 ```
 
 ## User Model
 
-The custom `accounts.User` model extends Django's `AbstractUser` with:
-
-| Field          | Description                                      |
-|----------------|--------------------------------------------------|
-| `phone_number` | Unique identifier used for login (`USERNAME_FIELD`) |
-| `email`        | Optional, unique email address                   |
-| `role`         | `admin`, `patient`, or `doctor`                  |
-| `is_verified`  | Whether the account has been verified            |
-| `created_at`   | Account creation timestamp                       |
-
-Superusers are created with `role=admin` and `is_verified=True` via the custom `UserManager`.
+| Field | Description |
+|-------|-------------|
+| `phone_number` | Unique identifier for login (`USERNAME_FIELD`) |
+| `email` | Optional, unique email address |
+| `role` | `admin`, `patient`, or `doctor` |
+| `is_verified` | Whether the account has been verified |
+| `created_at` | Account creation timestamp |
 
 ## Development
 
@@ -180,25 +224,18 @@ flake8
 
 ### Static and media files
 
-- Static files: `core/static/` → collected to `core/staticfiles/`
-- Media uploads: `core/media/`
-
 ```bash
 python manage.py collectstatic
 ```
 
-## API (planned)
+## Architecture Notes
 
-Dependencies for a REST API are installed (`djangorestframework`, `djangorestframework-simplejwt`, `djoser`, `drf-spectacular`), and `REST_FRAMEWORK` is configured with OpenAPI schema support. API endpoints and URL routing are not yet implemented.
-
-## Roadmap
-
-- [ ] Register and implement `appointments`, `payments`, and `reviews` apps
-- [ ] REST API endpoints with JWT authentication
-- [ ] OpenAPI/Swagger documentation UI
-- [ ] Celery task queue configuration
-- [ ] Email verification and notifications
-- [ ] Production deployment with Gunicorn
+- **Appointments → Payments → Reviews** implementation order (each depends on the prior)
+- **TimeSlot → Appointment** is OneToOne (one slot = one appointment)
+- `select_for_update()` for race-condition-safe booking
+- All frontend views use Class-Based Views (CBVs)
+- RTL layout with Vazirmatn Persian font
+- Frontend booking uses `fetch()` with CSRF token from Django template
 
 ## License
 

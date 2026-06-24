@@ -22,7 +22,7 @@ from . import views
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
-router.register("users/",views.UserViewSet,basename="Users")
+router.register("users",views.UserViewSet,basename="Users")
 router.register("PatientProfile",views.PatientProfileViewSet,basename="PatientProfile")
 router.register('specialty',views.SpecialtyViewSet,basename="Specialty")
 
