@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # HeyMedic
 
 HeyMedic is a Django-based healthcare platform for connecting patients and doctors. It supports phone-number authentication, role-based access (admin, patient, doctor), and is structured to grow into appointment booking, payments, and reviews.
@@ -202,3 +203,7 @@ Dependencies for a REST API are installed (`djangorestframework`, `djangorestfra
 ## License
 
 No license file is included yet. Add one before open-sourcing or distributing the project.
+=======
+# HeyMedicApplication-django
+This repo made for building and developing a medical platform with name HeyMedic with django and drf
+>>>>>>> 71b2fbfcbbba8bfb5f32fd64b9e380d98e443b9d
