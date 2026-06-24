@@ -29,7 +29,7 @@ services:
     ports:
       - "8000:8000"
     env_file:
-      - path:  ./envs/dev/django/.env
+      - .env
 
     depends_on:
       db:
