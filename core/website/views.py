@@ -72,7 +72,7 @@ class PatientDashboardView(LoginRequiredMixin, TemplateView):
     login_url = "/accounts/login/"
 
     def dispatch(self, request, *args, **kwargs):
-        if request.user.role != 'patient':
+        if request.user.is_authenticated and request.user.role != 'patient':
             return redirect('website:home_page')
         return super().dispatch(request, *args, **kwargs)
 
@@ -114,7 +114,7 @@ class DoctorDashboardView(LoginRequiredMixin, TemplateView):
     login_url = "/accounts/login/"
 
     def dispatch(self, request, *args, **kwargs):
-        if request.user.role != 'doctor':
+        if request.user.is_authenticated and request.user.role != 'doctor':
             return redirect('website:home_page')
         return super().dispatch(request, *args, **kwargs)
 

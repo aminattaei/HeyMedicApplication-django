@@ -19,6 +19,7 @@ from core.admin import admin_site
 
 urlpatterns = [
     path("", include("website.urls")),
+    path("accounts/",include("accounts.urls")),
     path("admin/", admin_site.urls),
 
     # DRF browsable auth

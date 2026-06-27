@@ -1,10 +1,12 @@
 import pytest
-from django.test import TestCase
-from django.utils import timezone
+from django.contrib.auth import get_user_model
 from rest_framework import status
 from datetime import date, time, timedelta
 
 from appointments.models import TimeSlot, Appointment
+from accounts.models import DoctorProfile
+
+User = get_user_model()
 
 
 @pytest.mark.django_db
@@ -50,6 +52,27 @@ class TestTimeSlotModel:
         slots = list(TimeSlot.objects.all())
         assert slots[0] == slot2
         assert slots[1] == slot1
+
+    def test_is_available_default_true(self, doctor_profile):
+        tomorrow = date.today() + timedelta(days=1)
+        slot = TimeSlot.objects.create(
+            doctor=doctor_profile,
+            date=tomorrow,
+            start_time=time(14, 0),
+            end_time=time(14, 30),
+        )
+        assert slot.is_available is True
+
+    def test_clean_raises_on_start_after_end(self, doctor_profile):
+        tomorrow = date.today() + timedelta(days=1)
+        slot = TimeSlot(
+            doctor=doctor_profile,
+            date=tomorrow,
+            start_time=time(15, 0),
+            end_time=time(14, 0),
+        )
+        with pytest.raises(Exception):
+            slot.clean()
 
 
 @pytest.mark.django_db
@@ -99,6 +122,15 @@ class TestAppointmentModel:
         assert appointments[0] == appt2
         assert appointments[1] == appt1
 
+    def test_booked_slot_marked_unavailable(self, appointment):
+        assert appointment.time_slot.is_available is False
+
+    def test_appointment_created_at_set(self, appointment):
+        assert appointment.created_at is not None
+
+    def test_notes_blank_by_default(self, appointment):
+        assert appointment.notes == ''
+
 
 @pytest.mark.django_db
 class TestTimeSlotAPI:
@@ -133,6 +165,12 @@ class TestTimeSlotAPI:
         api_client.force_authenticate(user=doctor_user)
         response = api_client.get('/api/v1/slots/?available_only=true')
         assert response.status_code == status.HTTP_200_OK
+        for slot in response.data:
+            assert slot['is_available'] is True
+
+    def test_create_time_slot_unauthenticated(self, api_client):
+        response = api_client.post('/api/v1/slots/', {})
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 @pytest.mark.django_db
@@ -141,11 +179,32 @@ class TestAppointmentAPI:
         api_client.force_authenticate(user=patient_user)
         response = api_client.get('/api/v1/appointments/')
         assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
 
     def test_list_appointments_as_doctor(self, api_client, doctor_user, appointment):
         api_client.force_authenticate(user=doctor_user)
         response = api_client.get('/api/v1/appointments/')
         assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+
+    def test_doctor_sees_only_own_appointments(self, api_client, doctor_user, appointment, doctor_profile):
+        other_user = User.objects.create_user(
+            phone_number='+989000000400',
+            password='test1234',
+            role='doctor',
+        )
+        other_doctor = DoctorProfile.objects.create(
+            user=other_user,
+            specialty=doctor_profile.specialty,
+            full_name='Dr. Other',
+            medical_license_no='MD99999',
+            clinic_address='Other Clinic',
+            price=300000,
+        )
+        api_client.force_authenticate(user=doctor_user)
+        response = api_client.get('/api/v1/appointments/')
+        for appt in response.data:
+            assert appt['doctor_name'] == doctor_profile.full_name
 
     def test_book_appointment(self, api_client, patient_user, patient_profile, time_slot):
         api_client.force_authenticate(user=patient_user)
@@ -161,6 +220,12 @@ class TestAppointmentAPI:
         response = api_client.post('/api/v1/appointments/book/', data, format='json')
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
+    def test_book_invalid_slot_id(self, api_client, patient_user):
+        api_client.force_authenticate(user=patient_user)
+        data = {'time_slot_id': 99999}
+        response = api_client.post('/api/v1/appointments/book/', data, format='json')
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
     def test_cancel_appointment(self, api_client, patient_user, appointment):
         api_client.force_authenticate(user=patient_user)
         response = api_client.patch(f'/api/v1/appointments/{appointment.pk}/cancel/')
@@ -168,7 +233,18 @@ class TestAppointmentAPI:
         appointment.refresh_from_db()
         assert appointment.status == 'cancelled'
 
+    def test_cancel_releases_slot(self, api_client, patient_user, appointment):
+        slot = appointment.time_slot
+        api_client.force_authenticate(user=patient_user)
+        api_client.patch(f'/api/v1/appointments/{appointment.pk}/cancel/')
+        slot.refresh_from_db()
+        assert slot.is_available is True
+
     def test_cancel_completed_appointment(self, api_client, patient_user, completed_appointment):
         api_client.force_authenticate(user=patient_user)
         response = api_client.patch(f'/api/v1/appointments/{completed_appointment.pk}/cancel/')
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_book_unauthenticated(self, api_client):
+        response = api_client.post('/api/v1/appointments/book/', {'time_slot_id': 1})
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
