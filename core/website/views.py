@@ -3,7 +3,11 @@ from django.views import View
 from django.views.generic import TemplateView, ListView, DetailView
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.contrib import messages
+from django_ratelimit.decorators import ratelimit
+from django.utils.decorators import method_decorator
 
 from accounts.models import User, DoctorProfile, PatientProfile, Specialty
 from appointments.models import TimeSlot, Appointment
@@ -205,6 +209,7 @@ class DoctorDashboardView(LoginRequiredMixin, TemplateView):
         return ctx
 
 
+@method_decorator(ratelimit(key='ip', rate='10/m', method='POST', block=True), name='dispatch')
 class LoginView(View):
     """Login page using phone number and password."""
 
@@ -225,6 +230,7 @@ class LoginView(View):
         })
 
 
+@method_decorator(ratelimit(key='ip', rate='5/m', method='POST', block=True), name='dispatch')
 class RegisterView(View):
     """Register page for new users."""
 
@@ -242,6 +248,13 @@ class RegisterView(View):
         if User.objects.filter(phone_number=phone_number).exists():
             return render(request, 'website/auth/register.html', {
                 'error': 'این شماره موبایل قبلاً ثبت شده است.'
+            })
+
+        try:
+            validate_password(password)
+        except ValidationError as e:
+            return render(request, 'website/auth/register.html', {
+                'error': ' '.join(e.messages)
             })
 
         user = User.objects.create_user(
@@ -385,8 +398,10 @@ class ChangePasswordView(LoginRequiredMixin, View):
             messages.error(request, "رمز عبور جدید و تکرار آن مطابقت ندارند.")
             return render(request, self.template_name)
 
-        if len(new_password) < 8:
-            messages.error(request, "رمز عبور باید حداقل ۸ کاراکتر باشد.")
+        try:
+            validate_password(new_password, user=user)
+        except ValidationError as e:
+            messages.error(request, ' '.join(e.messages))
             return render(request, self.template_name)
 
         user.set_password(new_password)

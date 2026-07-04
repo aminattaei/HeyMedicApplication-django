@@ -6,7 +6,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.urls import reverse_lazy
+from django_ratelimit.decorators import ratelimit
 from datetime import timedelta
 import json
 
@@ -28,6 +30,7 @@ class AdminRequiredMixin(LoginRequiredMixin):
         return super().dispatch(request, *args, **kwargs)
 
 
+@method_decorator(ratelimit(key='ip', rate='10/m', method='POST', block=True), name='dispatch')
 class AdminLoginView(View):
     def get(self, request):
         if request.user.is_authenticated and request.user.role == 'admin':

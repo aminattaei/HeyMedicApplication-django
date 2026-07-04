@@ -6,15 +6,6 @@ from accounts.models import Specialty
 
 
 
-class UserSerializer(serializers.ModelSerializer):
-    role = serializers.ReadOnlyField()
-    """
-    This serializer get an instance of User model and serializing it
-    """
-    class Meta:
-        model = User
-        fields = ('email',"phone_number",'role',"created_at")
-
 
 
 class PatientProfileSerializer(serializers.ModelSerializer):

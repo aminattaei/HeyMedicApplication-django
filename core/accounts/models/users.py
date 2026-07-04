@@ -1,4 +1,4 @@
-from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager,PermissionsMixin
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField # type: ignore
 from django.utils.text import slugify
@@ -8,7 +8,10 @@ class UserManager(BaseUserManager):
     def create_user(self, phone_number, password=None, **extra_fields):
         if not phone_number:
             raise ValueError('Phone number is required')
-        
+        if len(phone_number) != 11:
+            raise ValueError('Phone number must have 11 character!')
+
+
         user = self.model(phone_number=phone_number, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -27,35 +30,30 @@ class UserManager(BaseUserManager):
             
         return self.create_user(phone_number, password, **extra_fields)
 
-class User(AbstractUser):
+class User(AbstractBaseUser,PermissionsMixin):
     USER_TYPE = [
         ('admin', 'Admin'),
         ('patient', 'Patient'),
         ('doctor', 'Doctor'),
     ]
     
-    username = None
-    email = models.EmailField(
-        "Email Address",
-        blank=True,
-        null=True,
-        unique=True
-    )
-    phone_number = PhoneNumberField(unique=True)
+    
+    email = models.EmailField(blank=True, null=True, unique=True)
+    phone_number = PhoneNumberField(unique=True, max_length=20)
     is_verified = models.BooleanField(default=False)
     role = models.CharField(
-        max_length=10,
+        max_length=7,
         choices=USER_TYPE,
         default='patient'
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
     USERNAME_FIELD = 'phone_number'
-    REQUIRED_FIELDS = ['email']
+    REQUIRED_FIELDS = []
 
-    objects = UserManager() #type: ignore
+    objects = UserManager()
 
-    def __str__(self): # type: ignore
-        return str(self.phone_number) or self.email
+    def __str__(self):
+        return str(self.phone_number)
         
     

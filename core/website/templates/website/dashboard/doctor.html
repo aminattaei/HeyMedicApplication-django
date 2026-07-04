@@ -286,7 +286,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" crossorigin="anonymous"></script>
 <script>
     const revenueLabels = [{% for item in monthly_revenue %}'{{ item.month }}'{% if not forloop.last %},{% endif %}{% endfor %}];
     const revenueData = [{% for item in monthly_revenue %}{{ item.total }}{% if not forloop.last %},{% endif %}{% endfor %}];

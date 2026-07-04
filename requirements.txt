@@ -94,6 +94,11 @@ gunicorn
 
 django-phonenumber-field[phonenumbers]
 
+# ================================
+# Security & Rate Limiting
+# ================================
+django-ratelimit==4.1.0
+
 
 # ================================
 # Create auto slugfiled and translate it

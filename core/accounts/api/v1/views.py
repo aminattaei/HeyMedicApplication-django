@@ -1,5 +1,6 @@
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework import viewsets, status
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAdminUser, IsAuthenticated
+from rest_framework.response import Response
 
 from .serializers import (
     UserSerializer,
@@ -7,26 +8,39 @@ from .serializers import (
     SpecialtySerializer
 )
 
-from accounts.models import User,PatientProfile,Specialty
+from accounts.models import User, PatientProfile, Specialty
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    A viewset for viewing and editing user instances.
+    Admin-only endpoint for viewing user instances.
     """
-    permission_classes= [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAdminUser]
     serializer_class = UserSerializer
     queryset = User.objects.all()
 
-    
+
+class IsOwnerOrAdmin(IsAuthenticated):
+    def has_object_permission(self, request, view, obj):
+        return request.user == obj.user or request.user.role == 'admin'
+
 
 class PatientProfileViewSet(viewsets.ModelViewSet):
     """
-    A viewset for viewing and editing PatientProfile instance
+    A viewset for viewing and editing PatientProfile instances.
+    Patients can only access their own profile; admins can access all.
     """
-    permission_classes= [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
     serializer_class = PatientProfileSerializer
-    queryset = PatientProfile.objects.all()
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'admin':
+            return PatientProfile.objects.all()
+        return PatientProfile.objects.filter(user=user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 class SpecialtyViewSet(viewsets.ModelViewSet):
     """

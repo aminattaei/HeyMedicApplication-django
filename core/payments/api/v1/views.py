@@ -46,6 +46,12 @@ class PaymentViewSet(viewsets.ModelViewSet):
         appointment = Appointment.objects.get(id=serializer.validated_data['appointment_id'])
         patient_profile = request.user.patient_profile
 
+        if appointment.patient != patient_profile:
+            return Response(
+                {"detail": "This appointment does not belong to you."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         payment = Payment.objects.create(
             appointment=appointment,
             patient=patient_profile,
@@ -53,7 +59,12 @@ class PaymentViewSet(viewsets.ModelViewSet):
             status='pending'
         )
 
-        gateway_url = f"/payments/mock-gateway/{payment.id}/"
+        # Store a secure token for verification instead of exposing raw payment ID
+        import secrets
+        payment.gateway_ref = f"MOCK-{payment.id}-{secrets.token_hex(8)}"
+        payment.save()
+
+        gateway_url = f"/payments/mock-gateway/{payment.gateway_ref}/"
 
         return Response({
             "payment_id": payment.id,
@@ -65,12 +76,15 @@ class PaymentViewSet(viewsets.ModelViewSet):
     def verify_payment(self, request):
         """
         Verify a payment after the gateway callback.
-        On success: marks payment as successful and confirms the appointment.
+        WARNING: Mock implementation. In production, verify the gateway signature
+        and DO NOT trust the `status` field from the client.
         """
         serializer = PaymentVerifySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         gateway_ref = serializer.validated_data['gateway_ref']
+        # In production: validate gateway HMAC signature, NOT the client-provided status.
+        # The `status` field should only come from the gateway webhook, not the client.
         result_status = serializer.validated_data['status']
 
         try:
@@ -79,6 +93,20 @@ class PaymentViewSet(viewsets.ModelViewSet):
             return Response(
                 {"detail": "Transaction not found."},
                 status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Verify the payment belongs to this user
+        if payment.patient.user != request.user:
+            return Response(
+                {"detail": "This payment does not belong to you."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Only allow transition from 'pending' to prevent replay attacks
+        if payment.status != 'pending':
+            return Response(
+                {"detail": "Payment already processed."},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
         payment.status = result_status
